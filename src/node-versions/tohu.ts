@@ -1,105 +1,145 @@
-"use strict";
 const empty = 0;
 const white = 1;
 const black = 2;
 const verbose = true;
+
+type CellState = 0 | 1 | 2;
+
+type Coordinates = {
+  x: number;
+  y: number;
+};
+
 class Cell {
-    constructor(rawValue, flatIndex, gridWidth) {
-        this.isEmpty = () => this.state === empty;
-        this.coords = indexToCoords(flatIndex, gridWidth);
-        this.state = rawValue;
-        this.locked = rawValue > 0;
-        this.coordsString = `(${this.coords.x}, ${this.coords.y})`;
-    }
+  readonly coords: Coordinates;
+  state: CellState;
+  readonly locked: boolean;
+  readonly coordsString: string;
+  constructor(rawValue: CellState, flatIndex: number, gridWidth: number) {
+    this.coords = indexToCoords(flatIndex, gridWidth);
+    this.state = rawValue;
+    this.locked = rawValue > 0;
+    this.coordsString = `(${this.coords.x}, ${this.coords.y})`;
+  }
+  isEmpty = () => this.state === empty;
 }
+
 class Grid {
-    constructor(rawGrid) {
-        this.width = rawGrid[0].length;
-        this.height = rawGrid.length;
-        this.cells = rawGrid
-            .reduce((accum, item) => accum.concat(item), [])
-            .map((rawValue, i) => new Cell(rawValue, i, this.width));
-        this.rows = getRows(this.cells, this.width);
-        this.columns = getColumns(this.cells, this.width);
-    }
+  width: number;
+  height: number;
+  cells: Cell[];
+  rows: Cell[][];
+  columns: Cell[][];
+  constructor(rawGrid: CellState[][]) {
+    this.width = rawGrid[0].length;
+    this.height = rawGrid.length;
+    this.cells = rawGrid
+      .reduce((accum, item) => accum.concat(item), [])
+      .map(
+        (rawValue: CellState, i: number) => new Cell(rawValue, i, this.width)
+      );
+    this.rows = getRows(this.cells, this.width);
+    this.columns = getColumns(this.cells, this.width);
+  }
 }
+
 const blank = [
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0],
 ];
-const puzzle1 = [
-    [0, 0, 0, 0, 0, 0],
-    [0, 2, 0, 0, 0, 0],
-    [0, 0, 0, 2, 0, 0],
-    [0, 2, 0, 0, 1, 1],
-    [0, 0, 0, 0, 0, 1],
-    [0, 2, 2, 0, 0, 0],
+
+const puzzle1: CellState[][] = [
+  [0, 0, 0, 0, 0, 0],
+  [0, 2, 0, 0, 0, 0],
+  [0, 0, 0, 2, 0, 0],
+  [0, 2, 0, 0, 1, 1],
+  [0, 0, 0, 0, 0, 1],
+  [0, 2, 2, 0, 0, 0],
 ];
+
 const veryHard = [
-    [0, 0, 2, 0, 0, 0],
-    [1, 1, 0, 2, 0, 0],
-    [1, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 2, 0, 0],
-    [0, 0, 0, 0, 1, 0],
+  [0, 0, 2, 0, 0, 0],
+  [1, 1, 0, 2, 0, 0],
+  [1, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 2, 0, 0],
+  [0, 0, 0, 0, 1, 0],
 ];
+
 solve(puzzle1);
-function debugLog(message) {
-    if (verbose)
-        console.log(message);
+
+function debugLog(message: string) {
+  if (verbose) console.log(message);
 }
-function rawValueToColor(raw) {
-    switch (raw) {
-        case empty:
-            return empty;
-    }
+
+function rawValueToColor(raw: number) {
+  switch (raw) {
+    case empty:
+      return empty;
+  }
 }
-function trySetCellState(cell, state) {
-    if (!cell.locked) {
-        cell.state = state;
-        return true;
-    }
-    return false;
+
+function trySetCellState(cell: Cell, state: CellState) {
+  if (!cell.locked) {
+    cell.state = state;
+    return true;
+  }
+  return false;
 }
-function indexToCoords(index, gridWidth) {
-    return {
-        x: index % gridWidth,
-        y: Math.floor(index / gridWidth),
-    };
+
+function indexToCoords(index: number, gridWidth: number): Coordinates {
+  return {
+    x: index % gridWidth,
+    y: Math.floor(index / gridWidth),
+  };
 }
-function isInBounds(grid, coords) {
-    return (coords.x >= 0 &&
-        coords.x < grid.width &&
-        coords.y >= 0 &&
-        coords.y < grid.height);
+
+function isInBounds(grid: Grid, coords: Coordinates): boolean {
+  return (
+    coords.x >= 0 &&
+    coords.x < grid.width &&
+    coords.y >= 0 &&
+    coords.y < grid.height
+  );
 }
-function getCellAt(grid, coords) {
-    return isInBounds(grid, coords) ? grid.columns[coords.x][coords.y] : null;
+
+function getCellAt(grid: Grid, coords: Coordinates): Cell | null {
+  return isInBounds(grid, coords) ? grid.columns[coords.x][coords.y] : null;
 }
-function getCells(grid, coordsList) {
-    return coordsList.map((coords) => getCellAt(grid, coords));
+
+function getCells(grid: Grid, coordsList: Coordinates[]): (Cell | null)[] {
+  return coordsList.map((coords: Coordinates) => getCellAt(grid, coords));
 }
+
 //used to get columns and rows
-function getCellGroup(preparedCells, width, groupIndexCallback) {
-    const group = {};
-    for (let i = 0; i < preparedCells.length; i++) {
-        const groupIndex = groupIndexCallback(i, width);
-        if (!group[groupIndex])
-            group[groupIndex] = [];
-        group[groupIndex].push(preparedCells[i]);
-    }
-    return Object.keys(group).map((key) => group[key]);
+function getCellGroup(
+  preparedCells: Cell[],
+  width: number,
+  groupIndexCallback: (i: number, width: number) => number
+): Cell[][] {
+  const group: any = {};
+  for (let i = 0; i < preparedCells.length; i++) {
+    const groupIndex = groupIndexCallback(i, width);
+    if (!group[groupIndex]) group[groupIndex] = [];
+    group[groupIndex].push(preparedCells[i]);
+  }
+  return Object.keys(group).map((key) => group[key]);
 }
-function getColumns(preparedCells, width) {
-    return getCellGroup(preparedCells, width, (i, width) => i % width);
+
+function getColumns(preparedCells: Cell[], width: number): Cell[][] {
+  return getCellGroup(preparedCells, width, (i, width) => i % width);
 }
-function getRows(preparedCells, width) {
-    return getCellGroup(preparedCells, width, (i, width) => Math.floor(i / width));
+
+function getRows(preparedCells: Cell[], width: number): Cell[][] {
+  return getCellGroup(preparedCells, width, (i, width) =>
+    Math.floor(i / width)
+  );
 }
+
 // function getPreparedCell(rawValue: CellState, flatIndex: number, gridWidth: number) {
 //   const coords = indexToCoords(flatIndex, gridWidth);
 //   return {
@@ -110,34 +150,37 @@ function getRows(preparedCells, width) {
 //     coordsString: `(${coords.x}, ${coords.y})`,
 //   };
 // }
-function getCellNeighbors(preparedGrid, cell) {
-    const { x: startX, y: startY } = cell.coords;
-    const leftTwo = [
-        { x: startX - 1, y: startY },
-        { x: startX - 2, y: startY },
-    ];
-    const topTwo = [
-        { x: startX, y: startY - 1 },
-        { x: startX, y: startY - 2 },
-    ];
-    const rightTwo = [
-        { x: startX + 1, y: startY },
-        { x: startX + 2, y: startY },
-    ];
-    const botTwo = [
-        { x: startX, y: startY + 1 },
-        { x: startX, y: startY + 2 },
-    ];
-    return {
-        left: getCells(preparedGrid, leftTwo).filter((cell) => cell),
-        top: getCells(preparedGrid, topTwo).filter((cell) => cell),
-        right: getCells(preparedGrid, rightTwo).filter((cell) => cell),
-        bottom: getCells(preparedGrid, botTwo).filter((cell) => cell),
-    };
+
+function getCellNeighbors(preparedGrid: Grid, cell: Cell) {
+  const { x: startX, y: startY } = cell.coords;
+  const leftTwo = [
+    { x: startX - 1, y: startY },
+    { x: startX - 2, y: startY },
+  ];
+  const topTwo = [
+    { x: startX, y: startY - 1 },
+    { x: startX, y: startY - 2 },
+  ];
+  const rightTwo = [
+    { x: startX + 1, y: startY },
+    { x: startX + 2, y: startY },
+  ];
+  const botTwo = [
+    { x: startX, y: startY + 1 },
+    { x: startX, y: startY + 2 },
+  ];
+  return {
+    left: getCells(preparedGrid, leftTwo).filter((cell: Cell | null) => cell),
+    top: getCells(preparedGrid, topTwo).filter((cell: Cell | null) => cell),
+    right: getCells(preparedGrid, rightTwo).filter((cell: Cell | null) => cell),
+    bottom: getCells(preparedGrid, botTwo).filter((cell: Cell | null) => cell),
+  };
 }
-function isCellLegal(grid, cell) {
-    return false;
+
+function isCellLegal(grid: Grid, cell: Cell): boolean {
+  return false;
 }
+
 // function getPreparedGrid(rawGrid: CellState[][]) {
 //   const width = rawGrid[0].length;
 //   const cells = rawGrid
@@ -152,76 +195,80 @@ function isCellLegal(grid, cell) {
 //   };
 //   return grid;
 // }
-function tryIncrementCell(cell) {
-    if (cell.locked) {
-        console.error("Tried to increment a locked cell!");
-        return false;
-    }
-    if (cell.state === black) {
-        debugLog("reverting cell " + cell.coordsString);
-        cell.state = empty;
-        return false;
-    }
-    cell.state++;
-    console.log("cell " + cell.coordsString + " incremented to " + cell.state);
-    return true;
+
+function tryIncrementCell(cell: Cell): boolean {
+  if (cell.locked) {
+    console.error("Tried to increment a locked cell!");
+    return false;
+  }
+  if (cell.state === black) {
+    debugLog("reverting cell " + cell.coordsString);
+    cell.state = empty;
+    return false;
+  }
+  cell.state++;
+  console.log("cell " + cell.coordsString + " incremented to " + cell.state);
+  return true;
 }
-function solve(rawGrid) {
-    let index = 0;
-    const preparedGrid = new Grid(rawGrid);
-    printGrid(preparedGrid);
-    const maxIndex = preparedGrid.cells.length;
-    while (true) {
-        if (index >= maxIndex) {
-            console.log("Passed end");
-            break;
-        }
-        if (index < 0) {
-            console.log("Passed start");
-            break;
-        }
-        debugLog("visiting index " + index);
-        const curCell = preparedGrid.cells[index];
-        let indexAdd = 1;
-        if (curCell.locked) {
-            debugLog("cell " +
-                curCell.coords.x +
-                ", " +
-                curCell.coords.y +
-                " is locked; moving on");
-            index++;
-            continue;
-        }
-        while (curCell.isEmpty() || !isCellLegal(preparedGrid, curCell)) {
-            const didIncrement = tryIncrementCell(curCell);
-            if (!didIncrement) {
-                indexAdd = -1;
-                break;
-            }
-        }
-        index += indexAdd;
+
+function solve(rawGrid: CellState[][]) {
+  let index = 0;
+  const preparedGrid = new Grid(rawGrid);
+  printGrid(preparedGrid);
+  const maxIndex = preparedGrid.cells.length;
+  while (true) {
+    if (index >= maxIndex) {
+      console.log("Passed end");
+      break;
     }
-    printGrid(preparedGrid);
-}
-function printGrid(grid) {
-    let builtString = "";
-    const { rows } = grid;
-    for (let y = 0; y < rows.length; y++) {
-        for (let x = 0; x < rows[y].length; x++) {
-            const state = rows[y][x].state;
-            if (state === 0)
-                builtString += ". ";
-            if (state === 1)
-                builtString += "○ ";
-            if (state === 2)
-                builtString += "● ";
-        }
-        builtString += "\n";
+    if (index < 0) {
+      console.log("Passed start");
+      break;
     }
-    console.log(builtString);
+    debugLog("visiting index " + index);
+    const curCell = preparedGrid.cells[index];
+    let indexAdd = 1;
+    if (curCell.locked) {
+      debugLog(
+        "cell " +
+          curCell.coords.x +
+          ", " +
+          curCell.coords.y +
+          " is locked; moving on"
+      );
+      index++;
+      continue;
+    }
+    while (curCell.isEmpty() || !isCellLegal(preparedGrid, curCell)) {
+      const didIncrement = tryIncrementCell(curCell);
+      if (!didIncrement) {
+        indexAdd = -1;
+        break;
+      }
+    }
+    index += indexAdd;
+  }
+  printGrid(preparedGrid);
 }
+
+function printGrid(grid: Grid) {
+  let builtString = "";
+  const { rows } = grid;
+  for (let y = 0; y < rows.length; y++) {
+    for (let x = 0; x < rows[y].length; x++) {
+      const state = rows[y][x].state;
+      if (state === 0) builtString += ". ";
+      if (state === 1) builtString += "○ ";
+      if (state === 2) builtString += "● ";
+    }
+    builtString += "\n";
+  }
+  console.log(builtString);
+}
+
 // using System;
 // using System.Collections.Generic;
+
 // //This is technically a variation of the puzzle because it does not require rows and columsn to be unique in validation. This variation can also be seen in
 // //Simon Tatham's puzzle collection, in the puzzle Unruly, using the seed 6x6dn#721761777483731. Many other seeds for Unruly also produce duplicate rows
 // //and/or columns in Unruly, and the puzzles are still enjoyable, so I decided to follow his lead here.
@@ -274,8 +321,10 @@ function printGrid(grid) {
 // 			{0,0,0,2,0,0},
 // 			{0,0,0,0,1,0},
 // 		}; //from https://www.binarypuzzle.com/puzzles.php?size=6&level=4&nr=1
+
 // 		GenerateAndSolve();
 // 	}
+
 // 	public static void GenerateAndSolve()
 // 	{
 // 		Generator gen = new Generator();
@@ -285,6 +334,7 @@ function printGrid(grid) {
 // 		CheckUnique(generated);
 // 		FindSolutions(generated, 1);
 // 	}
+
 // 	public static void FindSolutions(int[,] input, int maxSolutions)
 // 	{
 // 		Grid grid = new Grid(input);
@@ -297,6 +347,7 @@ function printGrid(grid) {
 // 			Console.WriteLine();
 // 		}
 // 	}
+
 // 	public static void DoSteps(int[,] input, int steps)
 // 	{
 // 		Grid grid = new Grid(input);
@@ -309,6 +360,7 @@ function printGrid(grid) {
 // 		Console.WriteLine();
 // 		visuals = new GridVisuals(solver.GetSolvedGrid(1));
 // 	}
+
 // 	public static void CheckUnique(int[,] input)
 // 	{
 // 		Grid grid = new Grid(input);
@@ -319,6 +371,7 @@ function printGrid(grid) {
 // 		else
 // 			Console.WriteLine("Does NOT have unique solution");
 // 	}
+
 // 	public static void ShowAllSolutions(int[,] input)
 // 	{
 // 		Grid grid = new Grid(input);
@@ -342,6 +395,7 @@ function printGrid(grid) {
 // 		}
 // 	}
 // }
+
 // /////////////////////////////////////////////////////////////////////////////////////
 // /////////////////////////////////////////////////////////////////////////////////////
 // /////////////////////////////////////////////////////////////////////////////////////
@@ -351,11 +405,13 @@ function printGrid(grid) {
 // public class Grid
 // {
 // 	private Cell[, ] cells;
+
 // 	public int Columns {get{return cells.GetLength(0);}}
 // 	public int Rows{get{return cells.GetLength(1);}}
 // 	public int SectorWidth{get{return (int)Math.Sqrt(Columns);}}
 // 	public int SectorHeight{get{return (int)Math.Sqrt(Rows);}}
 // 	private readonly int maxRunCount = 2;
+
 // 	public enum Direction
 // 	{
 // 		Left,
@@ -363,6 +419,7 @@ function printGrid(grid) {
 // 		Right,
 // 		Down
 // 	}
+
 // 	public Grid(int sectorWidth, int sectorHeight)
 // 	{
 // 		cells = new Cell[sectorWidth * sectorWidth, sectorHeight * sectorHeight];
@@ -374,10 +431,12 @@ function printGrid(grid) {
 // 			}
 // 		}
 // 	}
+
 // 	public Grid(int[, ] states)
 // 	{
 // 		int width = states.GetLength(0);
 // 		int height = states.GetLength(1);
+
 // 		cells = new Cell[width, height];
 // 		int maxValue = width;
 // 		for (int x = 0; x < width; x++)
@@ -391,20 +450,24 @@ function printGrid(grid) {
 // 			}
 // 		}
 // 	}
+
 // 	public Cell GetCell(int x, int y)
 // 	{
 // 		if (x < 0 || x >= Columns || y < 0 || y >= Rows)
 // 			return null;
 // 		return cells[x, y];
 // 	}
+
 // 	private bool IsInBounds(int x, int y)
 // 	{
 // 		return x >= 0 && x < Columns && y >= 0 && y < Rows;
 // 	}
+
 // 	public int GetState(int x, int y)
 // 	{
 // 		return cells[x, y].State;
 // 	}
+
 // 	public bool IsGridLegal()
 // 	{
 // 		for (int x = 0; x < Columns; x++)
@@ -417,18 +480,22 @@ function printGrid(grid) {
 // 		}
 // 		return true;
 // 	}
+
 // 	public bool IsCellLegal(int x, int y)
 // 	{
 // 		int state = GetState(x, y);
+
 // 		int runCountLeft = CountStateRun(state, x, y, Direction.Left);
 // 		int runCountUp = CountStateRun(state, x, y, Direction.Up);
 // 		int runCountRight = CountStateRun(state, x, y, Direction.Right);
 // 		int runCountDown = CountStateRun(state, x, y, Direction.Down);
 // 		int stateCountInColumn = CountStateInColumn(state, x);
 // 		int stateCountInRow = CountStateInRow(state, y);
+
 // 		return runCountLeft + runCountRight - 1 <= maxRunCount && runCountUp + runCountDown - 1 <= maxRunCount &&
 // 			stateCountInColumn <= Rows / 2 && stateCountInRow <= Columns / 2;
 // 	}
+
 // 	public int CountStateInColumn(int state, int columnX)
 // 	{
 // 		int count = 0;
@@ -439,6 +506,7 @@ function printGrid(grid) {
 // 		}
 // 		return count;
 // 	}
+
 // 	public int CountStateInRow(int state, int rowY)
 // 	{
 // 		int count = 0;
@@ -449,11 +517,13 @@ function printGrid(grid) {
 // 		}
 // 		return count;
 // 	}
+
 // 	public int CountStateRun(int state, int startX, int startY, Direction direction)
 // 	{
 // 		int count = 0;
 // 		int curX = startX;
 // 		int curY = startY;
+
 // 		while (IsInBounds(curX, curY) && GetState(curX, curY) == state)
 // 		{
 // 			count++;
@@ -466,8 +536,10 @@ function printGrid(grid) {
 // 			if (direction == Direction.Down)
 // 				curY++;
 // 		}
+
 // 		return count;
 // 	}
+
 // 	public Grid CreateClone()
 // 	{
 // 		int[,] states = new int[Columns, Rows];
@@ -481,6 +553,7 @@ function printGrid(grid) {
 // 		return new Grid(states);
 // 	}
 // }
+
 // /////////////////////////////////////////////////////////////////////////////////////
 // /////////////////////////////////////////////////////////////////////////////////////
 // /////////////////////////////////////////////////////////////////////////////////////
@@ -494,15 +567,18 @@ function printGrid(grid) {
 // 	private bool isLocked;
 // 	public bool IsLocked { get { return isLocked; } }
 // 	private readonly int maxStateValue = 2;
+
 // 	public Cell(Grid gridIn)
 // 	{
 // 		parentGrid = gridIn;
 // 	}
+
 // 	public void SetState(int state)
 // 	{
 // 		State = state;
 // 		isLocked = true;
 // 	}
+
 // 	public bool TryIncrement()
 // 	{
 // 		if (isLocked)
@@ -528,14 +604,17 @@ function printGrid(grid) {
 // public class Generator
 // {
 // 	private System.Random rand;
+
 // 	public Generator()
 // 	{
 // 		rand = new System.Random();
 // 	}
+
 // 	public Generator(int seed)
 // 	{
 // 		rand = new System.Random(seed);
 // 	}
+
 // 	public int[,] GetNewPuzzle(int halfWidth, int halfHeight, int cluePercent)
 // 	{
 // 		if (cluePercent < 0 || cluePercent > 100)
@@ -547,6 +626,7 @@ function printGrid(grid) {
 // 		int height = halfHeight * 2;
 // 		int[,] puzzle = new int[width, height];
 // 		int clueCount = (int)((cluePercent / 100f) * width * height);
+
 // 		int safety = 0;
 // 		while (safety < 10000)
 // 		{
@@ -587,15 +667,18 @@ function printGrid(grid) {
 // 	private bool PassedEnd { get { return curY == grid.Rows; } }
 // 	private List<Grid> solvedGrids;
 // 	public int SolutionsFound { get { return solvedGrids.Count; } }
+
 // 	public Solver(Grid gridIn)
 // 	{
 // 		grid = gridIn;
 // 		solvedGrids = new List<Grid>();
 // 	}
+
 // 	public Grid GetSolvedGrid(int index)
 // 	{
 // 		return solvedGrids[index];
 // 	}
+
 // 	public bool HasUniqueSolution()
 // 	{
 // 		curX = 0;
@@ -603,10 +686,12 @@ function printGrid(grid) {
 // 		while (TryStep(2)) { }
 // 		return SolutionsFound == 1;
 // 	}
+
 // 	public void Solve(int maxSolutionsToFind)
 // 	{
 // 		curX = 0;
 // 		curY = 0;
+
 // 		int steps = 0;
 // 		while (TryStep(maxSolutionsToFind)) { steps++; }
 // 		if (curY == -1)
@@ -616,6 +701,7 @@ function printGrid(grid) {
 // 		Console.WriteLine(steps + " steps");
 // 		Console.WriteLine("Found " + SolutionsFound + " solutions");
 // 	}
+
 // 	public bool TryStep(int maxSolutionsToFind)
 // 	{
 // 		if (PassedEnd)
@@ -633,6 +719,7 @@ function printGrid(grid) {
 // 		Cell curCell = grid.GetCell(curX, curY);
 // 		if (curCell == null)
 // 			return false;
+
 // 		while (true)
 // 		{
 // 			if (grid.GetCell(curX, curY).IsLocked)
@@ -651,8 +738,10 @@ function printGrid(grid) {
 // 				break;
 // 			}
 // 		}
+
 // 		return true;
 // 	}
+
 // 	private void SetNextCoords()
 // 	{
 // 		do
@@ -665,6 +754,7 @@ function printGrid(grid) {
 // 			}
 // 		} while (grid.GetCell(curX, curY) != null && grid.GetCell(curX, curY).IsLocked);
 // 	}
+
 // 	private void SetPrevCoords()
 // 	{
 // 		do
@@ -678,6 +768,7 @@ function printGrid(grid) {
 // 		} while (grid.GetCell(curX, curY) != null && grid.GetCell(curX, curY).IsLocked);
 // 	}
 // }
+
 // /////////////////////////////////////////////////////////////////////////////////////
 // /////////////////////////////////////////////////////////////////////////////////////
 // /////////////////////////////////////////////////////////////////////////////////////
@@ -700,6 +791,7 @@ function printGrid(grid) {
 // 					str = "● ";
 // 				Console.Write(str);
 // 			}
+
 // 			Console.WriteLine();
 // 		}
 // 	}
