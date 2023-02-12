@@ -69,7 +69,25 @@ const puzzle1: CellState[][] = [
   [0, 2, 2, 0, 0, 0],
 ];
 
-const veryHard = [
+const puzzle2: CellState[][] = [
+  [0, 0, 0, 0, 2, 0],
+  [2, 2, 0, 2, 0, 0],
+  [0, 0, 0, 0, 0, 0],
+  [2, 0, 1, 1, 0, 0],
+  [2, 0, 1, 0, 0, 1],
+  [0, 0, 0, 0, 2, 0],
+];
+
+const puzzle3: CellState[][] = [
+  [0, 0, 1, 0, 0, 0],
+  [1, 0, 0, 0, 0, 0],
+  [1, 0, 0, 0, 2, 0],
+  [0, 0, 0, 1, 0, 0],
+  [0, 0, 0, 1, 2, 0],
+  [1, 0, 0, 0, 0, 1],
+];
+
+const veryHard: CellState[][] = [
   [0, 0, 2, 0, 0, 0],
   [1, 1, 0, 2, 0, 0],
   [1, 0, 0, 0, 0, 0],
@@ -78,7 +96,7 @@ const veryHard = [
   [0, 0, 0, 0, 1, 0],
 ];
 
-solve(puzzle1);
+solve(veryHard);
 
 function debugLog(message: string) {
   if (verbose) console.log(message);
@@ -222,6 +240,40 @@ function isCellLegal(grid: Grid, cell: Cell): boolean {
       return false;
     }
   }
+  const thisCellColumn = grid.columns[cell.coords.x];
+  const thisCellRow = grid.rows[cell.coords.y];
+  const sameColorInColumn = countCellsBy(
+    grid,
+    thisCellColumn,
+    (cell) => cell.state === thisCell.state
+  );
+  const maxColorInColumn = grid.height / 2;
+  if (sameColorInColumn > maxColorInColumn) {
+    debugLog(
+      "cell " +
+        cell.coordsString +
+        " is illegal because there are more than " +
+        maxColorInColumn +
+        " of its color in its column"
+    );
+    return false;
+  }
+  const sameColorInRow = countCellsBy(
+    grid,
+    thisCellRow,
+    (cell) => cell.state === thisCell.state
+  );
+  const maxColorInRow = grid.width / 2;
+  if (sameColorInRow > maxColorInRow) {
+    debugLog(
+      "cell " +
+        cell.coordsString +
+        " is illegal because there are more than " +
+        maxColorInRow +
+        " of its color in its row"
+    );
+    return false;
+  }
   return true;
 }
 
@@ -258,23 +310,22 @@ function tryIncrementCell(cell: Cell): boolean {
 function solve(rawGrid: CellState[][]) {
   let index = 0;
   let backtracking = false;
+  let steps = 0;
   const preparedGrid = new Grid(rawGrid);
   printGrid(preparedGrid);
   const maxIndex = preparedGrid.cells.length;
-  let safety = 0;
-  const safetyMax = 999;
-  while (true && safety < safetyMax) {
+  while (true) {
     if (index >= maxIndex) {
-      debugLog("Passed end");
+      debugLog("Solving SUCCESS after " + steps + " steps");
       break;
     }
     if (index < 0) {
-      debugLog("Passed start");
+      debugLog("Solving FAILED after " + steps + " steps");
       break;
     }
     const curCell = preparedGrid.cells[index];
     debugLog("=======================");
-    debugLog("visiting cell " + curCell.coordsString);
+    debugLog("visiting cell " + curCell.coordsString + " on step " + steps);
     debugLog(
       "locked? " +
         curCell.locked +
@@ -293,14 +344,14 @@ function solve(rawGrid: CellState[][]) {
           " is locked; skipping"
       );
       index = backtracking ? index - 1 : index + 1;
-      safety++;
+      steps++;
       continue;
     }
 
     while (true) {
       const reverted = !tryIncrementCell(curCell);
       if (reverted) {
-        debugLog("start backtracking");
+        debugLog(`${backtracking ? "continue" : "start"} backtracking`);
         backtracking = true;
         break;
       }
@@ -310,7 +361,7 @@ function solve(rawGrid: CellState[][]) {
       }
     }
     index = backtracking ? index - 1 : index + 1;
-    safety++;
+    steps++;
   }
   printGrid(preparedGrid);
 }
