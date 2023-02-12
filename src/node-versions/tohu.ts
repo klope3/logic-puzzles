@@ -1,4 +1,4 @@
-import { blankSmall } from "./tohuPuzzles.js";
+import { bad, blankSmall } from "./tohuPuzzles.js";
 import {
   CellState,
   Cell,
@@ -12,7 +12,13 @@ import {
 
 const verbose = false;
 
-const solutions = getSolutions(blankSmall);
+const generated = getRawRandom(6, 6);
+printGrid(new Grid(generated));
+// const solutions = getSolutions(bad, 200);
+// for (const solution of solutions) {
+//   printGrid(solution);
+// }
+// console.log(solutions.length + " solutions");
 
 function isInBounds(grid: Grid, coords: Coordinates): boolean {
   return (
@@ -21,6 +27,17 @@ function isInBounds(grid: Grid, coords: Coordinates): boolean {
     coords.y >= 0 &&
     coords.y < grid.height
   );
+}
+
+function getOppositeState(state: CellState) {
+  switch (state) {
+    case white:
+      return black;
+    case black:
+      return white;
+    default:
+      return empty;
+  }
 }
 
 function getCellAt(grid: Grid, coords: Coordinates): Cell | null {
@@ -146,6 +163,42 @@ function tryIncrementCell(cell: Cell): boolean {
   return true;
 }
 
+function isGridLegal(rawGrid: CellState[][]): boolean {
+  const grid: Grid = new Grid(rawGrid);
+  const maxEachColorPerColumn = grid.columns.length / 2;
+  const maxEachColorPerRow = grid.rows.length / 2;
+  for (const column of grid.columns) {
+    const whites = countCellsBy(
+      grid,
+      column,
+      (cell: Cell) => cell.state === white
+    );
+    if (whites > maxEachColorPerColumn) return false;
+    const blacks = countCellsBy(
+      grid,
+      column,
+      (cell: Cell) => cell.state === white
+    );
+    if (blacks > maxEachColorPerColumn) return false;
+  }
+  for (const row of grid.rows) {
+    const whites = countCellsBy(
+      grid,
+      row,
+      (cell: Cell) => cell.state === white
+    );
+    if (whites > maxEachColorPerRow) return false;
+    const blacks = countCellsBy(
+      grid,
+      row,
+      (cell: Cell) => cell.state === white
+    );
+    if (blacks > maxEachColorPerRow) return false;
+  }
+
+  return true;
+}
+
 function getSolutions(
   rawGrid: CellState[][],
   maxSolutionsToFind?: number
@@ -155,7 +208,7 @@ function getSolutions(
   let steps = 0;
   const preparedGrid = new Grid(rawGrid);
   const solutions: Grid[] = [];
-  printGrid(preparedGrid);
+  //   printGrid(preparedGrid);
   const maxIndex = preparedGrid.cells.length;
   while (true) {
     if (index >= maxIndex) {
@@ -219,6 +272,57 @@ function getSolutions(
     steps++;
   }
   return solutions;
+}
+
+function generateRaw(width: number, height: number): CellState[][] {
+  let safety = 0;
+  const safetyMax = 10000;
+  let generated: CellState[][] = [];
+  while (safety < safetyMax) {
+    generated = getRawRandom(width, height);
+    const solutions = getSolutions(generated, 2);
+    if (solutions.length === 1) break;
+    safety++;
+  }
+  console.log("safety " + safety);
+  return generated;
+}
+
+function getRawRandom(width: number, height: number): CellState[][] {
+  //right now this needs a seedable RNG for proper testing!
+  const generated: CellState[][] = [];
+  const offLimitsWhite: number[] = []; //which indices can't receive white
+  const offLimitsBlack: number[] = []; //which indices can't receive black
+
+  for (let y = 0; y < height; y++) {
+    const row: CellState[] = [];
+    for (let x = 0; x < width; x++) {
+      let valToPlace: CellState = 0;
+      const flatIndex = y * width + x;
+      debugLog("visiting index " + flatIndex);
+      //IF we decide the space won't be empty...
+      if (Math.random() < 0.3) {
+        //we'll place either white or black
+        valToPlace = Math.random() < 0.5 ? white : black;
+        //check off limits indices based on which color was chosen
+        const offLimitsIndices =
+          valToPlace === white ? offLimitsWhite : offLimitsBlack;
+        const canPlaceThisVal = offLimitsIndices.includes(flatIndex);
+        //if we can't place this color, choose the other instead
+        if (!canPlaceThisVal) valToPlace = getOppositeState(valToPlace);
+        //if this is the second same color in a row horizontally, the space on the right must be off-limits for this color
+        if (row[flatIndex - 1] === valToPlace)
+          offLimitsIndices.push(flatIndex + 1);
+        //if this is the second same color in a row vertically, the space below must be off-limits for this color
+        if (row[flatIndex - width] === valToPlace)
+          offLimitsIndices.push(flatIndex - width);
+      }
+      //actually place the value
+      row.push(valToPlace);
+    }
+    generated.push(row);
+  }
+  return generated;
 }
 
 function printGrid(grid: Grid) {
