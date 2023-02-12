@@ -5,6 +5,14 @@ const verbose = true;
 
 type CellState = 0 | 1 | 2;
 
+type CellNeighbors = {
+  left: Cell[];
+  top: Cell[];
+  right: Cell[];
+  bottom: Cell[];
+  [key: string]: Cell[];
+};
+
 type Coordinates = {
   x: number;
   y: number;
@@ -111,8 +119,14 @@ function getCellAt(grid: Grid, coords: Coordinates): Cell | null {
   return isInBounds(grid, coords) ? grid.columns[coords.x][coords.y] : null;
 }
 
-function getCells(grid: Grid, coordsList: Coordinates[]): (Cell | null)[] {
-  return coordsList.map((coords: Coordinates) => getCellAt(grid, coords));
+function getCells(grid: Grid, coordsList: Coordinates[]): Cell[] {
+  const cells: (Cell | null)[] = coordsList.map((coords: Coordinates) =>
+    getCellAt(grid, coords)
+  );
+  const cleaned: Cell[] = cells.filter(
+    (cell: Cell | null) => cell !== null
+  ) as Cell[]; //should use "as" here??
+  return cleaned;
 }
 
 //used to get columns and rows
@@ -151,7 +165,7 @@ function getRows(preparedCells: Cell[], width: number): Cell[][] {
 //   };
 // }
 
-function getCellNeighbors(preparedGrid: Grid, cell: Cell) {
+function getCellNeighbors(preparedGrid: Grid, cell: Cell): CellNeighbors {
   const { x: startX, y: startY } = cell.coords;
   const leftTwo = [
     { x: startX - 1, y: startY },
@@ -177,8 +191,38 @@ function getCellNeighbors(preparedGrid: Grid, cell: Cell) {
   };
 }
 
+function countCellsBy(
+  grid: Grid,
+  cells: Cell[],
+  callback: (cell: Cell) => boolean
+): number {
+  return cells.reduce(
+    (accum: number, cell: Cell) => (callback(cell) ? accum + 1 : accum),
+    0
+  );
+}
+
 function isCellLegal(grid: Grid, cell: Cell): boolean {
-  return false;
+  const thisCell = cell;
+  const neighbors = getCellNeighbors(grid, cell);
+  for (const key of Object.keys(neighbors)) {
+    const twoSameNeighbors =
+      countCellsBy(
+        grid,
+        neighbors[key],
+        (cell) => cell.state > empty && cell.state === thisCell.state
+      ) === 2;
+    if (twoSameNeighbors) {
+      debugLog(
+        "cell " +
+          cell.coordsString +
+          " is illegal because it has two same neighbors on " +
+          key
+      );
+      return false;
+    }
+  }
+  return true;
 }
 
 // function getPreparedGrid(rawGrid: CellState[][]) {
@@ -207,46 +251,66 @@ function tryIncrementCell(cell: Cell): boolean {
     return false;
   }
   cell.state++;
-  console.log("cell " + cell.coordsString + " incremented to " + cell.state);
+  debugLog("cell " + cell.coordsString + " incremented to " + cell.state);
   return true;
 }
 
 function solve(rawGrid: CellState[][]) {
   let index = 0;
+  let backtracking = false;
   const preparedGrid = new Grid(rawGrid);
   printGrid(preparedGrid);
   const maxIndex = preparedGrid.cells.length;
-  while (true) {
+  let safety = 0;
+  const safetyMax = 999;
+  while (true && safety < safetyMax) {
     if (index >= maxIndex) {
-      console.log("Passed end");
+      debugLog("Passed end");
       break;
     }
     if (index < 0) {
-      console.log("Passed start");
+      debugLog("Passed start");
       break;
     }
-    debugLog("visiting index " + index);
     const curCell = preparedGrid.cells[index];
-    let indexAdd = 1;
+    debugLog("=======================");
+    debugLog("visiting cell " + curCell.coordsString);
+    debugLog(
+      "locked? " +
+        curCell.locked +
+        "; empty? " +
+        curCell.isEmpty() +
+        "; legal? " +
+        isCellLegal(preparedGrid, curCell)
+    );
+
     if (curCell.locked) {
       debugLog(
         "cell " +
           curCell.coords.x +
           ", " +
           curCell.coords.y +
-          " is locked; moving on"
+          " is locked; skipping"
       );
-      index++;
+      index = backtracking ? index - 1 : index + 1;
+      safety++;
       continue;
     }
-    while (curCell.isEmpty() || !isCellLegal(preparedGrid, curCell)) {
-      const didIncrement = tryIncrementCell(curCell);
-      if (!didIncrement) {
-        indexAdd = -1;
+
+    while (true) {
+      const reverted = !tryIncrementCell(curCell);
+      if (reverted) {
+        debugLog("start backtracking");
+        backtracking = true;
+        break;
+      }
+      if (isCellLegal(preparedGrid, curCell)) {
+        backtracking = false;
         break;
       }
     }
-    index += indexAdd;
+    index = backtracking ? index - 1 : index + 1;
+    safety++;
   }
   printGrid(preparedGrid);
 }

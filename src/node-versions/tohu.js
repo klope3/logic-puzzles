@@ -81,7 +81,9 @@ function getCellAt(grid, coords) {
     return isInBounds(grid, coords) ? grid.columns[coords.x][coords.y] : null;
 }
 function getCells(grid, coordsList) {
-    return coordsList.map((coords) => getCellAt(grid, coords));
+    const cells = coordsList.map((coords) => getCellAt(grid, coords));
+    const cleaned = cells.filter((cell) => cell !== null); //should use "as" here??
+    return cleaned;
 }
 //used to get columns and rows
 function getCellGroup(preparedCells, width, groupIndexCallback) {
@@ -135,8 +137,23 @@ function getCellNeighbors(preparedGrid, cell) {
         bottom: getCells(preparedGrid, botTwo).filter((cell) => cell),
     };
 }
+function countCellsBy(grid, cells, callback) {
+    return cells.reduce((accum, cell) => (callback(cell) ? accum + 1 : accum), 0);
+}
 function isCellLegal(grid, cell) {
-    return false;
+    const thisCell = cell;
+    const neighbors = getCellNeighbors(grid, cell);
+    for (const key of Object.keys(neighbors)) {
+        const twoSameNeighbors = countCellsBy(grid, neighbors[key], (cell) => cell.state > empty && cell.state === thisCell.state) === 2;
+        if (twoSameNeighbors) {
+            debugLog("cell " +
+                cell.coordsString +
+                " is illegal because it has two same neighbors on " +
+                key);
+            return false;
+        }
+    }
+    return true;
 }
 // function getPreparedGrid(rawGrid: CellState[][]) {
 //   const width = rawGrid[0].length;
@@ -163,43 +180,59 @@ function tryIncrementCell(cell) {
         return false;
     }
     cell.state++;
-    console.log("cell " + cell.coordsString + " incremented to " + cell.state);
+    debugLog("cell " + cell.coordsString + " incremented to " + cell.state);
     return true;
 }
 function solve(rawGrid) {
     let index = 0;
+    let backtracking = false;
     const preparedGrid = new Grid(rawGrid);
     printGrid(preparedGrid);
     const maxIndex = preparedGrid.cells.length;
-    while (true) {
+    let safety = 0;
+    const safetyMax = 999;
+    while (true && safety < safetyMax) {
         if (index >= maxIndex) {
-            console.log("Passed end");
+            debugLog("Passed end");
             break;
         }
         if (index < 0) {
-            console.log("Passed start");
+            debugLog("Passed start");
             break;
         }
-        debugLog("visiting index " + index);
         const curCell = preparedGrid.cells[index];
-        let indexAdd = 1;
+        debugLog("=======================");
+        debugLog("visiting cell " + curCell.coordsString);
+        debugLog("locked? " +
+            curCell.locked +
+            "; empty? " +
+            curCell.isEmpty() +
+            "; legal? " +
+            isCellLegal(preparedGrid, curCell));
         if (curCell.locked) {
             debugLog("cell " +
                 curCell.coords.x +
                 ", " +
                 curCell.coords.y +
-                " is locked; moving on");
-            index++;
+                " is locked; skipping");
+            index = backtracking ? index - 1 : index + 1;
+            safety++;
             continue;
         }
-        while (curCell.isEmpty() || !isCellLegal(preparedGrid, curCell)) {
-            const didIncrement = tryIncrementCell(curCell);
-            if (!didIncrement) {
-                indexAdd = -1;
+        while (true) {
+            const reverted = !tryIncrementCell(curCell);
+            if (reverted) {
+                debugLog("start backtracking");
+                backtracking = true;
+                break;
+            }
+            if (isCellLegal(preparedGrid, curCell)) {
+                backtracking = false;
                 break;
             }
         }
-        index += indexAdd;
+        index = backtracking ? index - 1 : index + 1;
+        safety++;
     }
     printGrid(preparedGrid);
 }
