@@ -2,7 +2,7 @@
 const empty = 0;
 const white = 1;
 const black = 2;
-const verbose = true;
+const verbose = false;
 class Cell {
     constructor(rawValue, flatIndex, gridWidth) {
         this.isEmpty = () => this.state === empty;
@@ -22,6 +22,9 @@ class Grid {
         this.rows = getRows(this.cells, this.width);
         this.columns = getColumns(this.cells, this.width);
     }
+    createClone() {
+        return new Grid(this.rows.map((row) => row.map((cell) => cell.state)));
+    }
 }
 const blank = [
     [0, 0, 0, 0, 0, 0],
@@ -30,6 +33,12 @@ const blank = [
     [0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0],
+];
+const blankSmall = [
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
 ];
 const puzzle1 = [
     [0, 0, 0, 0, 0, 0],
@@ -63,7 +72,7 @@ const veryHard = [
     [0, 0, 0, 2, 0, 0],
     [0, 0, 0, 0, 1, 0],
 ];
-solve(veryHard);
+const solutions = getSolutions(blankSmall);
 function debugLog(message) {
     if (verbose)
         console.log(message);
@@ -221,17 +230,29 @@ function tryIncrementCell(cell) {
     debugLog("cell " + cell.coordsString + " incremented to " + cell.state);
     return true;
 }
-function solve(rawGrid) {
+function getSolutions(rawGrid, maxSolutionsToFind) {
     let index = 0;
     let backtracking = false;
     let steps = 0;
     const preparedGrid = new Grid(rawGrid);
+    const solutions = [];
     printGrid(preparedGrid);
     const maxIndex = preparedGrid.cells.length;
     while (true) {
         if (index >= maxIndex) {
-            debugLog("Solving SUCCESS after " + steps + " steps");
-            break;
+            solutions.push(preparedGrid.createClone());
+            debugLog("Solving SUCCESS after " +
+                steps +
+                " steps; " +
+                solutions.length +
+                " solution(s) found");
+            if (!maxSolutionsToFind || solutions.length === maxSolutionsToFind) {
+                break;
+            }
+            else {
+                backtracking = true;
+                index--;
+            }
         }
         if (index < 0) {
             debugLog("Solving FAILED after " + steps + " steps");
@@ -271,7 +292,7 @@ function solve(rawGrid) {
         index = backtracking ? index - 1 : index + 1;
         steps++;
     }
-    printGrid(preparedGrid);
+    return solutions;
 }
 function printGrid(grid) {
     let builtString = "";

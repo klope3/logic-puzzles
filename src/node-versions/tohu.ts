@@ -1,7 +1,7 @@
 const empty = 0;
 const white = 1;
 const black = 2;
-const verbose = true;
+const verbose = false;
 
 type CellState = 0 | 1 | 2;
 
@@ -49,6 +49,12 @@ class Grid {
     this.rows = getRows(this.cells, this.width);
     this.columns = getColumns(this.cells, this.width);
   }
+
+  createClone(): Grid {
+    return new Grid(
+      this.rows.map((row: Cell[]) => row.map((cell: Cell) => cell.state))
+    );
+  }
 }
 
 const blank = [
@@ -58,6 +64,13 @@ const blank = [
   [0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0],
+];
+
+const blankSmall: CellState[][] = [
+  [0, 0, 0, 0],
+  [0, 0, 0, 0],
+  [0, 0, 0, 0],
+  [0, 0, 0, 0],
 ];
 
 const puzzle1: CellState[][] = [
@@ -96,7 +109,7 @@ const veryHard: CellState[][] = [
   [0, 0, 0, 0, 1, 0],
 ];
 
-solve(veryHard);
+const solutions = getSolutions(blankSmall);
 
 function debugLog(message: string) {
   if (verbose) console.log(message);
@@ -307,17 +320,33 @@ function tryIncrementCell(cell: Cell): boolean {
   return true;
 }
 
-function solve(rawGrid: CellState[][]) {
+function getSolutions(
+  rawGrid: CellState[][],
+  maxSolutionsToFind?: number
+): Grid[] {
   let index = 0;
   let backtracking = false;
   let steps = 0;
   const preparedGrid = new Grid(rawGrid);
+  const solutions: Grid[] = [];
   printGrid(preparedGrid);
   const maxIndex = preparedGrid.cells.length;
   while (true) {
     if (index >= maxIndex) {
-      debugLog("Solving SUCCESS after " + steps + " steps");
-      break;
+      solutions.push(preparedGrid.createClone());
+      debugLog(
+        "Solving SUCCESS after " +
+          steps +
+          " steps; " +
+          solutions.length +
+          " solution(s) found"
+      );
+      if (!maxSolutionsToFind || solutions.length === maxSolutionsToFind) {
+        break;
+      } else {
+        backtracking = true;
+        index--;
+      }
     }
     if (index < 0) {
       debugLog("Solving FAILED after " + steps + " steps");
@@ -363,7 +392,7 @@ function solve(rawGrid: CellState[][]) {
     index = backtracking ? index - 1 : index + 1;
     steps++;
   }
-  printGrid(preparedGrid);
+  return solutions;
 }
 
 function printGrid(grid: Grid) {
