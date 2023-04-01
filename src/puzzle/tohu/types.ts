@@ -9,7 +9,6 @@ export type CellNeighbors = {
   top: Cell[];
   right: Cell[];
   bottom: Cell[];
-  [key: string]: Cell[];
 };
 
 export type Coordinates = {

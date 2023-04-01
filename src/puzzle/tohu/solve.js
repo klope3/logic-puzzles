@@ -1,64 +1,5 @@
-import { Grid, empty, black, white, } from "./typesTohu.js";
-const verbose = false;
-const generated = getRawRandom(6, 6);
-printGrid(new Grid(generated));
-// const solutions = getSolutions(bad, 200);
-// for (const solution of solutions) {
-//   printGrid(solution);
-// }
-// console.log(solutions.length + " solutions");
-function isInBounds(grid, coords) {
-    return (coords.x >= 0 &&
-        coords.x < grid.width &&
-        coords.y >= 0 &&
-        coords.y < grid.height);
-}
-function getOppositeState(state) {
-    switch (state) {
-        case white:
-            return black;
-        case black:
-            return white;
-        default:
-            return empty;
-    }
-}
-function getCellAt(grid, coords) {
-    return isInBounds(grid, coords) ? grid.columns[coords.x][coords.y] : null;
-}
-function getCells(grid, coordsList) {
-    const cells = coordsList.map((coords) => getCellAt(grid, coords));
-    const cleaned = cells.filter((cell) => cell !== null); //should use "as" here??
-    return cleaned;
-}
-function getCellNeighbors(preparedGrid, cell) {
-    const { x: startX, y: startY } = cell.coords;
-    const leftTwo = [
-        { x: startX - 1, y: startY },
-        { x: startX - 2, y: startY },
-    ];
-    const topTwo = [
-        { x: startX, y: startY - 1 },
-        { x: startX, y: startY - 2 },
-    ];
-    const rightTwo = [
-        { x: startX + 1, y: startY },
-        { x: startX + 2, y: startY },
-    ];
-    const botTwo = [
-        { x: startX, y: startY + 1 },
-        { x: startX, y: startY + 2 },
-    ];
-    return {
-        left: getCells(preparedGrid, leftTwo).filter((cell) => cell),
-        top: getCells(preparedGrid, topTwo).filter((cell) => cell),
-        right: getCells(preparedGrid, rightTwo).filter((cell) => cell),
-        bottom: getCells(preparedGrid, botTwo).filter((cell) => cell),
-    };
-}
-function countCellsBy(grid, cells, callback) {
-    return cells.reduce((accum, cell) => (callback(cell) ? accum + 1 : accum), 0);
-}
+import { black, empty, Grid, white, } from "./types.js";
+import { countCellsBy, debugLog, getCellNeighbors } from "./utility.js";
 function isCellLegal(grid, cell) {
     const thisCell = cell;
     const neighbors = getCellNeighbors(grid, cell);
@@ -132,7 +73,7 @@ function isGridLegal(rawGrid) {
     }
     return true;
 }
-function getSolutions(rawGrid, maxSolutionsToFind) {
+export function getSolutions(rawGrid, maxSolutionsToFind) {
     let index = 0;
     let backtracking = false;
     let steps = 0;
@@ -195,74 +136,4 @@ function getSolutions(rawGrid, maxSolutionsToFind) {
         steps++;
     }
     return solutions;
-}
-function generateRaw(width, height) {
-    let safety = 0;
-    const safetyMax = 10000;
-    let generated = [];
-    while (safety < safetyMax) {
-        generated = getRawRandom(width, height);
-        const solutions = getSolutions(generated, 2);
-        if (solutions.length === 1)
-            break;
-        safety++;
-    }
-    console.log("safety " + safety);
-    return generated;
-}
-function getRawRandom(width, height) {
-    //right now this needs a seedable RNG for proper testing!
-    const generated = [];
-    const offLimitsWhite = []; //which indices can't receive white
-    const offLimitsBlack = []; //which indices can't receive black
-    for (let y = 0; y < height; y++) {
-        const row = [];
-        for (let x = 0; x < width; x++) {
-            let valToPlace = 0;
-            const flatIndex = y * width + x;
-            debugLog("visiting index " + flatIndex);
-            //IF we decide the space won't be empty...
-            if (Math.random() < 0.3) {
-                //we'll place either white or black
-                valToPlace = Math.random() < 0.5 ? white : black;
-                //check off limits indices based on which color was chosen
-                const offLimitsIndices = valToPlace === white ? offLimitsWhite : offLimitsBlack;
-                const canPlaceThisVal = offLimitsIndices.includes(flatIndex);
-                //if we can't place this color, choose the other instead
-                if (!canPlaceThisVal)
-                    valToPlace = getOppositeState(valToPlace);
-                //if this is the second same color in a row horizontally, the space on the right must be off-limits for this color
-                if (row[flatIndex - 1] === valToPlace)
-                    offLimitsIndices.push(flatIndex + 1);
-                //if this is the second same color in a row vertically, the space below must be off-limits for this color
-                if (row[flatIndex - width] === valToPlace)
-                    offLimitsIndices.push(flatIndex - width);
-            }
-            //actually place the value
-            row.push(valToPlace);
-        }
-        generated.push(row);
-    }
-    return generated;
-}
-function printGrid(grid) {
-    let builtString = "";
-    const { rows } = grid;
-    for (let y = 0; y < rows.length; y++) {
-        for (let x = 0; x < rows[y].length; x++) {
-            const state = rows[y][x].state;
-            if (state === 0)
-                builtString += ". ";
-            if (state === 1)
-                builtString += "○ ";
-            if (state === 2)
-                builtString += "● ";
-        }
-        builtString += "\n";
-    }
-    console.log(builtString);
-}
-function debugLog(message) {
-    if (verbose)
-        console.log(message);
 }

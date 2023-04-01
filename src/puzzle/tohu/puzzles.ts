@@ -1,4 +1,4 @@
-import { CellState } from "./typesTohu";
+import { CellState } from "./types.js";
 
 export const blank = [
   [0, 0, 0, 0, 0, 0],
