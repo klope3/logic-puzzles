@@ -25,6 +25,7 @@ function getCells(grid, coordsList) {
     const cleaned = cells.filter((cell) => cell !== null); //should use "as" here??
     return cleaned;
 }
+//this should be removed in favor of getCellStateNeighbors
 export function getCellNeighbors(preparedGrid, cell) {
     const { x: startX, y: startY } = cell.coords;
     const leftTwo = [
@@ -48,6 +49,28 @@ export function getCellNeighbors(preparedGrid, cell) {
         top: getCells(preparedGrid, topTwo).filter((cell) => cell),
         right: getCells(preparedGrid, rightTwo).filter((cell) => cell),
         bottom: getCells(preparedGrid, botTwo).filter((cell) => cell),
+    };
+}
+export function getCellStateNeighbors(coords, stateGrid) {
+    const gridWidth = stateGrid[0].length;
+    const gridHeight = stateGrid.length;
+    return {
+        left: [
+            coords.x > 0 ? stateGrid[coords.y][coords.x - 1] : undefined,
+            coords.x > 1 ? stateGrid[coords.y][coords.x - 2] : undefined,
+        ],
+        right: [
+            coords.x < gridWidth - 1 ? stateGrid[coords.y][coords.x + 1] : undefined,
+            coords.x < gridWidth - 2 ? stateGrid[coords.y][coords.x + 2] : undefined,
+        ],
+        top: [
+            coords.y > 0 ? stateGrid[coords.y - 1][coords.x] : undefined,
+            coords.y > 1 ? stateGrid[coords.y - 2][coords.x] : undefined,
+        ],
+        bottom: [
+            coords.y < gridHeight - 1 ? stateGrid[coords.y + 1][coords.x] : undefined,
+            coords.y < gridHeight - 2 ? stateGrid[coords.y + 2][coords.x] : undefined,
+        ],
     };
 }
 export function countCellsBy(grid, cells, callback) {

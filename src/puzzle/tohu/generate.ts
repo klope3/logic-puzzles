@@ -1,10 +1,99 @@
-import { black, CellState, Coordinates, white } from "./types.js";
-import { getRandomFilledCellState, indexToCoords } from "./utility.js";
+import { mulberry32 } from "../../seededRandom.js";
+import {
+  doesPositionHaveTwoNeighborsOfState,
+  isPositionFlankedByState,
+  isTallyMaxedAtPosition,
+} from "./deductions.js";
+import { black, CellState, ColorTallies, Coordinates, white } from "./types.js";
+import {
+  getCellStateNeighbors,
+  getOppositeState,
+  getRandomFilledCellState,
+  indexToCoords,
+} from "./utility.js";
 
-type ColorTallies = {
-  white: number;
-  black: number;
+type PuzzleParams = {
+  width: number;
+  height: number;
 };
+
+export function generatePuzzle(
+  width: number,
+  height: number,
+  seed?: number
+): CellState[][] {
+  const params = validatePuzzleParams(width, height);
+  width = params.width;
+  height = params.height;
+  const raw = getRawRandom(width, height, seed);
+  const puzzle = raw.map((row) => row.map((state) => state));
+  const openIndices = Array.from({ length: width * height }, (_, i) => i);
+  let filledCellsCount = width * height;
+  if (seed === undefined)
+    seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+  const columnTallies: ColorTallies[] = Array.from(
+    { length: params.width },
+    (_) => ({
+      white: width / 2,
+      black: width / 2,
+    })
+  );
+  const rowTallies: ColorTallies[] = Array.from(
+    { length: params.height },
+    (_) => ({
+      white: height / 2,
+      black: height / 2,
+    })
+  );
+
+  let step = 0;
+  while (openIndices.length > 0) {
+    const randIndex = Math.floor(mulberry32(seed + step) * openIndices.length);
+    const flatIndex = openIndices[randIndex];
+    const coords = indexToCoords(flatIndex, width);
+    const originalValue = puzzle[coords.y][coords.x];
+    if (wouldBeDeducible(coords, puzzle, columnTallies, rowTallies)) {
+      puzzle[coords.y][coords.x] = 0;
+      addStateTally(coords, originalValue, columnTallies, rowTallies, -1);
+      filledCellsCount--;
+    }
+    openIndices.splice(randIndex, 1);
+    step++;
+  }
+  return puzzle;
+}
+
+function wouldBeDeducible(
+  coords: Coordinates,
+  puzzle: CellState[][],
+  columnTallies: ColorTallies[],
+  rowTallies: ColorTallies[]
+) {
+  const width = puzzle[0].length;
+  const height = puzzle.length;
+  const maxPerColorPerColumn = height / 2;
+  const maxPerColorPerRow = width / 2;
+  const neighbors = getCellStateNeighbors(coords, puzzle);
+  const stateHere = puzzle[coords.y][coords.x];
+  const flanked = isPositionFlankedByState(
+    neighbors,
+    getOppositeState(stateHere)
+  );
+  const twoSameNeighbors = doesPositionHaveTwoNeighborsOfState(
+    neighbors,
+    stateHere
+  );
+  const oppositeMaxed = isTallyMaxedAtPosition(
+    coords,
+    columnTallies,
+    rowTallies,
+    maxPerColorPerRow,
+    maxPerColorPerColumn,
+    getOppositeState(stateHere)
+  );
+
+  return flanked || twoSameNeighbors || oppositeMaxed;
+}
 
 //after 12x12 the puzzles get slow to generate
 export function getRawRandom(
@@ -12,43 +101,30 @@ export function getRawRandom(
   height: number,
   seed?: number
 ): CellState[][] {
-  if (width < 2) width = 2;
-  if (height < 2) height = 2;
-  if (width % 2 !== 0) {
-    console.error(
-      "Puzzle width must be even and at least 2; changing " +
-        width +
-        " to " +
-        (width + 1)
-    );
-    width++;
-  }
-  if (height % 2 !== 0) {
-    console.error(
-      "Puzzle height must be even and at least 2; changing " +
-        height +
-        " to " +
-        (height + 1)
-    );
-    height++;
-  }
+  const params = validatePuzzleParams(width, height);
 
-  const generated: CellState[][] = Array.from({ length: height }, (_) =>
-    Array.from({ length: width }, (_) => 0)
+  const generated: CellState[][] = Array.from({ length: params.height }, (_) =>
+    Array.from({ length: params.width }, (_) => 0)
   );
   let flatIndex = 0;
   let step = 0;
   if (seed === undefined)
     seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-  const totalCells = width * height;
-  const rowTallies: ColorTallies[] = Array.from({ length: height }, (_) => ({
-    white: 0,
-    black: 0,
-  }));
-  const columnTallies: ColorTallies[] = Array.from({ length: width }, (_) => ({
-    white: 0,
-    black: 0,
-  }));
+  const totalCells = params.width * params.height;
+  const rowTallies: ColorTallies[] = Array.from(
+    { length: params.height },
+    (_) => ({
+      white: 0,
+      black: 0,
+    })
+  );
+  const columnTallies: ColorTallies[] = Array.from(
+    { length: params.width },
+    (_) => ({
+      white: 0,
+      black: 0,
+    })
+  );
 
   let safety = 0;
   const safetyMax = 999999999;
@@ -57,8 +133,8 @@ export function getRawRandom(
     if (
       tryGenerationStep(
         flatIndex,
-        width,
-        height,
+        params.width,
+        params.height,
         generated,
         columnTallies,
         rowTallies,
@@ -115,6 +191,33 @@ function tryGenerationStep(
   generated[coords.y][coords.x] = valToSet;
   addStateTally(coords, valToSet, columnTallies, rowTallies, 1);
   return true;
+}
+
+function validatePuzzleParams(width: number, height: number): PuzzleParams {
+  if (width < 2) width = 2;
+  if (height < 2) height = 2;
+  if (width % 2 !== 0) {
+    console.error(
+      "Puzzle width must be even and at least 2; changing " +
+        width +
+        " to " +
+        (width + 1)
+    );
+    width++;
+  }
+  if (height % 2 !== 0) {
+    console.error(
+      "Puzzle height must be even and at least 2; changing " +
+        height +
+        " to " +
+        (height + 1)
+    );
+    height++;
+  }
+  return {
+    width,
+    height,
+  };
 }
 
 function addStateTally(

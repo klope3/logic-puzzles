@@ -5,6 +5,7 @@ import {
   Cell,
   CellNeighbors,
   CellState,
+  CellStateNeighbors,
   Coordinates,
   empty,
   Grid,
@@ -45,6 +46,7 @@ function getCells(grid: Grid, coordsList: Coordinates[]): Cell[] {
   return cleaned;
 }
 
+//this should be removed in favor of getCellStateNeighbors
 export function getCellNeighbors(
   preparedGrid: Grid,
   cell: Cell
@@ -71,6 +73,33 @@ export function getCellNeighbors(
     top: getCells(preparedGrid, topTwo).filter((cell: Cell | null) => cell),
     right: getCells(preparedGrid, rightTwo).filter((cell: Cell | null) => cell),
     bottom: getCells(preparedGrid, botTwo).filter((cell: Cell | null) => cell),
+  };
+}
+
+export function getCellStateNeighbors(
+  coords: Coordinates,
+  stateGrid: CellState[][]
+): CellStateNeighbors {
+  const gridWidth = stateGrid[0].length;
+  const gridHeight = stateGrid.length;
+
+  return {
+    left: [
+      coords.x > 0 ? stateGrid[coords.y][coords.x - 1] : undefined,
+      coords.x > 1 ? stateGrid[coords.y][coords.x - 2] : undefined,
+    ],
+    right: [
+      coords.x < gridWidth - 1 ? stateGrid[coords.y][coords.x + 1] : undefined,
+      coords.x < gridWidth - 2 ? stateGrid[coords.y][coords.x + 2] : undefined,
+    ],
+    top: [
+      coords.y > 0 ? stateGrid[coords.y - 1][coords.x] : undefined,
+      coords.y > 1 ? stateGrid[coords.y - 2][coords.x] : undefined,
+    ],
+    bottom: [
+      coords.y < gridHeight - 1 ? stateGrid[coords.y + 1][coords.x] : undefined,
+      coords.y < gridHeight - 2 ? stateGrid[coords.y + 2][coords.x] : undefined,
+    ],
   };
 }
 

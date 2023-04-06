@@ -6,6 +6,18 @@ export const black = 2;
 
 export type CellState = 0 | 1 | 2;
 
+export type CellStateNeighbors = {
+  left: (CellState | undefined)[];
+  right: (CellState | undefined)[];
+  top: (CellState | undefined)[];
+  bottom: (CellState | undefined)[];
+};
+
+export type ColorTallies = {
+  white: number;
+  black: number;
+};
+
 export type CellNeighbors = {
   left: Cell[];
   top: Cell[];

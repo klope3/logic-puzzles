@@ -1,4 +1,6 @@
-import { getRawRandom as getRawSolvedRandom } from "../puzzle/tohu/generate.js";
+import { generatePuzzle, } from "../puzzle/tohu/generate.js";
+import { Grid } from "../puzzle/tohu/types.js";
+import { printGrid } from "../puzzle/tohu/utility.js";
 export const verbose = false;
 // const generated = getRawRandom(6, 6);
 // printGrid(new Grid(generated));
@@ -9,10 +11,10 @@ export const verbose = false;
 //   printGrid(grid);
 //   console.log("====================");
 // }
-for (let i = 0; i < 1; i++) {
-    const raw = getRawSolvedRandom(13, 13);
+for (let i = 0; i < 30; i++) {
+    const puzzle = generatePuzzle(8, 8, i);
+    printGrid(new Grid(puzzle));
 }
-console.log("done");
 // let str = "";
 // for (let i = 0; i < 30; i++) {
 //   const n = mulberry32(i) > 0.5 ? 2 : 1;
