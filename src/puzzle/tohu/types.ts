@@ -1,3 +1,5 @@
+import { indexToCoords } from "./utility.js";
+
 export const empty = 0;
 export const white = 1;
 export const black = 2;
@@ -78,11 +80,4 @@ function getRows(preparedCells: Cell[], width: number): Cell[][] {
   return getCellGroup(preparedCells, width, (i, width) =>
     Math.floor(i / width)
   );
-}
-
-function indexToCoords(index: number, gridWidth: number): Coordinates {
-  return {
-    x: index % gridWidth,
-    y: Math.floor(index / gridWidth),
-  };
 }

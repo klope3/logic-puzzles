@@ -1,4 +1,5 @@
 import { verbose } from "../../node-versions/tohuMain.js";
+import { mulberry32 } from "../../seededRandom.js";
 import { black, empty, white, } from "./types.js";
 function isInBounds(grid, coords) {
     return (coords.x >= 0 &&
@@ -51,6 +52,17 @@ export function getCellNeighbors(preparedGrid, cell) {
 }
 export function countCellsBy(grid, cells, callback) {
     return cells.reduce((accum, cell) => (callback(cell) ? accum + 1 : accum), 0);
+}
+export function getRandomFilledCellState(seed) {
+    if (seed === undefined)
+        return Math.random() > 0.5 ? 2 : 1;
+    return mulberry32(seed) > 0.5 ? 2 : 1;
+}
+export function indexToCoords(index, gridWidth) {
+    return {
+        x: index % gridWidth,
+        y: Math.floor(index / gridWidth),
+    };
 }
 export function printGrid(grid) {
     let builtString = "";

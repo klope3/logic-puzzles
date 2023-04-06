@@ -1,3 +1,4 @@
+import { indexToCoords } from "./utility.js";
 export const empty = 0;
 export const white = 1;
 export const black = 2;
@@ -40,10 +41,4 @@ function getColumns(preparedCells, width) {
 }
 function getRows(preparedCells, width) {
     return getCellGroup(preparedCells, width, (i, width) => Math.floor(i / width));
-}
-function indexToCoords(index, gridWidth) {
-    return {
-        x: index % gridWidth,
-        y: Math.floor(index / gridWidth),
-    };
 }
