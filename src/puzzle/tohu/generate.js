@@ -1,6 +1,6 @@
 import { black, white } from "./types.js";
 import { getRandomFilledCellState, indexToCoords } from "./utility.js";
-//at around 20x20 the puzzles get slow to generate
+//after 12x12 the puzzles get slow to generate
 export function getRawRandom(width, height, seed) {
     if (width < 2)
         width = 2;
@@ -23,7 +23,6 @@ export function getRawRandom(width, height, seed) {
     const generated = Array.from({ length: height }, (_) => Array.from({ length: width }, (_) => 0));
     let flatIndex = 0;
     let step = 0;
-    // console.log("generating seed " + seed);
     if (seed === undefined)
         seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
     const totalCells = width * height;
@@ -38,39 +37,37 @@ export function getRawRandom(width, height, seed) {
     let safety = 0;
     const safetyMax = 999999999;
     while (flatIndex < totalCells && safety < safetyMax) {
-        // console.log("stepping at " + flatIndex);
-        // console.log("SAFETY is " + safety);
-        const coords = indexToCoords(flatIndex, width);
-        const prevValue = generated[coords.y][coords.x];
-        //if a value is already here, we got here by backtracking, so remove the previous value and update the tallies
-        if (prevValue !== 0) {
-            generated[coords.y][coords.x] = 0;
-            addStateTally(coords, prevValue, columnTallies, rowTallies, -1);
+        if (tryGenerationStep(flatIndex, width, height, generated, columnTallies, rowTallies, seed, step)) {
+            flatIndex++;
         }
-        //get a value to set, either by random choice or by necessity
-        const valToSet = chooseStateForCoords(coords, width, height, columnTallies, rowTallies, generated, seed + step);
-        //if there's no legal value we can set, OR if we're trying to repeat the prev value, backtrack
-        if (valToSet === undefined || valToSet === prevValue) {
+        else {
             if (flatIndex > 0)
                 flatIndex--;
-            step++;
-            safety++;
-            continue;
-        }
-        generated[coords.y][coords.x] = valToSet;
-        // console.log("set " + coords.x + ", " + coords.y + " to " + valToSet);
-        addStateTally(coords, valToSet, columnTallies, rowTallies, 1);
-        if (valToSet === white) {
-            rowTallies;
         }
         step++;
-        flatIndex++;
         safety++;
     }
     if (safety === safetyMax)
         console.error("infinite loop!=======================");
-    // if (step > 10000) console.log("generation took " + step + " steps");
     return generated;
+}
+function tryGenerationStep(flatIndex, width, height, generated, columnTallies, rowTallies, seed, step) {
+    const coords = indexToCoords(flatIndex, width);
+    const prevValue = generated[coords.y][coords.x];
+    //if a value is already here, we got here by backtracking, so remove the previous value and update the tallies
+    if (prevValue !== 0) {
+        generated[coords.y][coords.x] = 0;
+        addStateTally(coords, prevValue, columnTallies, rowTallies, -1);
+    }
+    //get a value to set, either by random choice or by necessity
+    const valToSet = chooseStateForCoords(coords, width, height, columnTallies, rowTallies, generated, seed + step);
+    //if there's no legal value we can set, OR if we're trying to repeat the prev value, backtrack
+    if (valToSet === undefined || valToSet === prevValue) {
+        return false;
+    }
+    generated[coords.y][coords.x] = valToSet;
+    addStateTally(coords, valToSet, columnTallies, rowTallies, 1);
+    return true;
 }
 function addStateTally(coords, state, columnTallies, rowTallies, valueToAdd) {
     if (state === white) {

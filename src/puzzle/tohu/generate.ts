@@ -54,42 +54,67 @@ export function getRawRandom(
   const safetyMax = 999999999;
 
   while (flatIndex < totalCells && safety < safetyMax) {
-    const coords = indexToCoords(flatIndex, width);
-    const prevValue = generated[coords.y][coords.x];
-    //if a value is already here, we got here by backtracking, so remove the previous value and update the tallies
-    if (prevValue !== 0) {
-      generated[coords.y][coords.x] = 0;
-      addStateTally(coords, prevValue, columnTallies, rowTallies, -1);
-    }
-
-    //get a value to set, either by random choice or by necessity
-    const valToSet = chooseStateForCoords(
-      coords,
-      width,
-      height,
-      columnTallies,
-      rowTallies,
-      generated,
-      seed + step
-    );
-    //if there's no legal value we can set, OR if we're trying to repeat the prev value, backtrack
-    if (valToSet === undefined || valToSet === prevValue) {
+    if (
+      tryGenerationStep(
+        flatIndex,
+        width,
+        height,
+        generated,
+        columnTallies,
+        rowTallies,
+        seed,
+        step
+      )
+    ) {
+      flatIndex++;
+    } else {
       if (flatIndex > 0) flatIndex--;
-      step++;
-      safety++;
-      continue;
     }
-
-    generated[coords.y][coords.x] = valToSet;
-    addStateTally(coords, valToSet, columnTallies, rowTallies, 1);
     step++;
-    flatIndex++;
     safety++;
   }
   if (safety === safetyMax)
     console.error("infinite loop!=======================");
 
   return generated;
+}
+
+function tryGenerationStep(
+  flatIndex: number,
+  width: number,
+  height: number,
+  generated: CellState[][],
+  columnTallies: ColorTallies[],
+  rowTallies: ColorTallies[],
+  seed: number,
+  step: number
+) {
+  const coords = indexToCoords(flatIndex, width);
+  const prevValue = generated[coords.y][coords.x];
+  //if a value is already here, we got here by backtracking, so remove the previous value and update the tallies
+  if (prevValue !== 0) {
+    generated[coords.y][coords.x] = 0;
+    addStateTally(coords, prevValue, columnTallies, rowTallies, -1);
+  }
+
+  //get a value to set, either by random choice or by necessity
+  const valToSet = chooseStateForCoords(
+    coords,
+    width,
+    height,
+    columnTallies,
+    rowTallies,
+    generated,
+    seed + step
+  );
+  //if there's no legal value we can set, OR if we're trying to repeat the prev value, backtrack
+  if (valToSet === undefined || valToSet === prevValue) {
+    return false;
+  }
+
+  generated[coords.y][coords.x] = valToSet;
+  addStateTally(coords, valToSet, columnTallies, rowTallies, 1);
+  return true;
 }
 
 function addStateTally(
