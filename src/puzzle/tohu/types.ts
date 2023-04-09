@@ -4,6 +4,11 @@ export const empty = 0;
 export const white = 1;
 export const black = 2;
 
+export type Puzzle = {
+  states: CellState[][];
+  solution: CellState[][];
+};
+
 export type CellState = 0 | 1 | 2;
 
 export type CellStateNeighbors = {

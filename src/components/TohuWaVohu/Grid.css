@@ -1,0 +1,44 @@
+.puzzle-grid {
+  display: grid;
+  max-width: 320px;
+  aspect-ratio: 1;
+  gap: 3px;
+}
+
+.cell {
+  position: relative;
+  background-color: gray;
+}
+
+.white::after,
+.black::after {
+  position: absolute;
+  content: "";
+  left: 10%;
+  top: 10%;
+  right: 10%;
+  bottom: 10%;
+  border-radius: 50%;
+}
+
+.white::after {
+  background-color: white;
+  /* border-color: darkgray; */
+}
+
+.black::after {
+  background-color: black;
+}
+
+.white.locked::after,
+.black.locked::after {
+  border: 3px dashed;
+}
+
+.white.locked::after {
+  border-color: darkgray;
+}
+
+.black.locked::after {
+  border-color: lightgray;
+}
