@@ -2,7 +2,7 @@ import { getCoordsString } from "./utility.js";
 export function solve(puzzle) {
     startAllPaths(puzzle);
     let safety = 0;
-    const safetyMax = 20;
+    const safetyMax = 999;
     while (safety < safetyMax) {
         let deductionsThisPass = 0;
         for (const p of puzzle.paths) {

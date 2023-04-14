@@ -19,13 +19,13 @@ export function puzzleFromNumberGrid(grid: NumberGrid) {
 }
 
 function getCellVisual(cell: Cell): string {
-  if (!cell.pathParent) return ".";
+  if (!cell.pathParent) return ". ";
   const { cells: pathCells } = cell.pathParent;
-  if (pathCells.length === 0) return ".";
+  if (pathCells.length === 0) return ". ";
   const thisCellIndex = pathCells.indexOf(cell);
   const prevCell = pathCells[thisCellIndex - 1];
   const nextCell = pathCells[thisCellIndex + 1];
-  if (!prevCell || !nextCell) return ".";
+  if (!prevCell || !nextCell) return ". ";
 
   const thisCoords = cell.coordinates;
   const prevCoords = prevCell.coordinates;
@@ -38,13 +38,13 @@ function getCellVisual(cell: Cell): string {
     prevCoords.x === thisCoords.x + 1 || nextCoords.x === thisCoords.x + 1;
   const down =
     prevCoords.y === thisCoords.y + 1 || nextCoords.y === thisCoords.y + 1;
-  if (left && up && !right && !down) return "┘";
-  if (left && right && !up && !down) return "—";
-  if (left && down && !up && !right) return "┐";
-  if (up && right && !left && !down) return "└";
-  if (down && right && !left && !up) return "┌";
-  if (up && down) return "|";
-  return "?";
+  if (left && up && !right && !down) return "┘ ";
+  if (left && right && !up && !down) return "——";
+  if (left && down && !up && !right) return "┐ ";
+  if (up && right && !left && !down) return "└—";
+  if (down && right && !left && !up) return "┌—";
+  if (up && down) return "| ";
+  return "? ";
 }
 
 export function getCoordsString(coordinates: Coordinates) {
@@ -59,6 +59,7 @@ export function printPuzzle(puzzle: Puzzle) {
     for (let x = 0; x < unsolved[0].length; x++) {
       if (unsolved[y][x] > 0) {
         row += unsolved[y][x];
+        if (unsolved[y][x] < 10) row += " ";
         continue;
       }
       row += getCellVisual(cells[y][x]);

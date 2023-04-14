@@ -17,15 +17,15 @@ export function puzzleFromNumberGrid(grid) {
 }
 function getCellVisual(cell) {
     if (!cell.pathParent)
-        return ".";
+        return ". ";
     const { cells: pathCells } = cell.pathParent;
     if (pathCells.length === 0)
-        return ".";
+        return ". ";
     const thisCellIndex = pathCells.indexOf(cell);
     const prevCell = pathCells[thisCellIndex - 1];
     const nextCell = pathCells[thisCellIndex + 1];
     if (!prevCell || !nextCell)
-        return ".";
+        return ". ";
     const thisCoords = cell.coordinates;
     const prevCoords = prevCell.coordinates;
     const nextCoords = nextCell.coordinates;
@@ -34,18 +34,18 @@ function getCellVisual(cell) {
     const right = prevCoords.x === thisCoords.x + 1 || nextCoords.x === thisCoords.x + 1;
     const down = prevCoords.y === thisCoords.y + 1 || nextCoords.y === thisCoords.y + 1;
     if (left && up && !right && !down)
-        return "┘";
+        return "┘ ";
     if (left && right && !up && !down)
-        return "—";
+        return "——";
     if (left && down && !up && !right)
-        return "┐";
+        return "┐ ";
     if (up && right && !left && !down)
-        return "└";
+        return "└—";
     if (down && right && !left && !up)
-        return "┌";
+        return "┌—";
     if (up && down)
-        return "|";
-    return "?";
+        return "| ";
+    return "? ";
 }
 export function getCoordsString(coordinates) {
     return `(${coordinates.x}, ${coordinates.y})`;
@@ -58,6 +58,8 @@ export function printPuzzle(puzzle) {
         for (let x = 0; x < unsolved[0].length; x++) {
             if (unsolved[y][x] > 0) {
                 row += unsolved[y][x];
+                if (unsolved[y][x] < 10)
+                    row += " ";
                 continue;
             }
             row += getCellVisual(cells[y][x]);
