@@ -1,5 +1,5 @@
+const verbose = false;
 export function puzzleFromNumberGrid(grid) {
-    const numbers = new Set();
     const puzzle = {
         unsolved: grid,
         cells: Array.from({ length: grid.length }, (_) => []),
@@ -15,24 +15,40 @@ export function puzzleFromNumberGrid(grid) {
     }
     return puzzle;
 }
+export function getNeighborCells(puzzle, centerCoords) {
+    const l = { x: centerCoords.x - 1, y: centerCoords.y };
+    const u = { x: centerCoords.x, y: centerCoords.y - 1 };
+    const r = { x: centerCoords.x + 1, y: centerCoords.y };
+    const d = { x: centerCoords.x, y: centerCoords.y + 1 };
+    return {
+        left: isInBounds(l, puzzle) ? puzzle.cells[l.y][l.x] : undefined,
+        top: isInBounds(u, puzzle) ? puzzle.cells[u.y][u.x] : undefined,
+        right: isInBounds(r, puzzle) ? puzzle.cells[r.y][r.x] : undefined,
+        bottom: isInBounds(d, puzzle) ? puzzle.cells[d.y][d.x] : undefined,
+    };
+}
+export function isInBounds(coordinates, puzzle) {
+    return (coordinates.x >= 0 &&
+        coordinates.y >= 0 &&
+        coordinates.x < puzzle.cells[0].length &&
+        coordinates.y < puzzle.cells.length);
+}
 function getCellVisual(cell) {
-    if (!cell.pathParent)
+    if (!cell.pathParent || cell.pathParent.cells.length === 0)
         return ". ";
     const { cells: pathCells } = cell.pathParent;
-    if (pathCells.length === 0)
-        return ". ";
     const thisCellIndex = pathCells.indexOf(cell);
-    const prevCell = pathCells[thisCellIndex - 1];
-    const nextCell = pathCells[thisCellIndex + 1];
-    if (!prevCell || !nextCell)
+    const prevCellInPath = pathCells[thisCellIndex - 1];
+    const nextCellInPath = pathCells[thisCellIndex + 1];
+    if (!prevCellInPath || !nextCellInPath)
         return ". ";
-    const thisCoords = cell.coordinates;
-    const prevCoords = prevCell.coordinates;
-    const nextCoords = nextCell.coordinates;
-    const left = prevCoords.x === thisCoords.x - 1 || nextCoords.x === thisCoords.x - 1;
-    const up = prevCoords.y === thisCoords.y - 1 || nextCoords.y === thisCoords.y - 1;
-    const right = prevCoords.x === thisCoords.x + 1 || nextCoords.x === thisCoords.x + 1;
-    const down = prevCoords.y === thisCoords.y + 1 || nextCoords.y === thisCoords.y + 1;
+    return chooseCellVisual(cell.coordinates, prevCellInPath.coordinates, nextCellInPath.coordinates);
+}
+function chooseCellVisual(targetCoords, prevCoords, nextCoords) {
+    const left = prevCoords.x === targetCoords.x - 1 || nextCoords.x === targetCoords.x - 1;
+    const up = prevCoords.y === targetCoords.y - 1 || nextCoords.y === targetCoords.y - 1;
+    const right = prevCoords.x === targetCoords.x + 1 || nextCoords.x === targetCoords.x + 1;
+    const down = prevCoords.y === targetCoords.y + 1 || nextCoords.y === targetCoords.y + 1;
     if (left && up && !right && !down)
         return "┘ ";
     if (left && right && !up && !down)
@@ -51,7 +67,7 @@ export function getCoordsString(coordinates) {
     return `(${coordinates.x}, ${coordinates.y})`;
 }
 export function printPuzzle(puzzle) {
-    const { unsolved, paths, cells } = puzzle;
+    const { unsolved, cells } = puzzle;
     let full = "";
     for (let y = 0; y < unsolved.length; y++) {
         let row = "";
@@ -79,4 +95,8 @@ export function testPathInPuzzle(puzzle, pathNumber, coordinatesArray) {
         puzzle.cells[c.y][c.x].pathParent = path;
     }
     puzzle.paths.push(path);
+}
+export function debugLog(message) {
+    if (verbose)
+        console.log(message);
 }
