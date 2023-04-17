@@ -102,6 +102,50 @@ export function testPathInPuzzle(puzzle, pathNumber, coordinatesArray) {
     }
     puzzle.paths.push(path);
 }
+//this function could be adapted to support grid printing in console
+export function puzzleToDirectionGrid(puzzle) {
+    const { cells } = puzzle;
+    const directionGrid = Array.from({ length: cells.length }, (_) => Array.from({ length: cells[0].length }, (_) => ({
+        left: false,
+        up: false,
+        right: false,
+        down: false,
+    })));
+    for (let y = 0; y < cells.length; y++) {
+        for (let x = 0; x < cells[0].length; x++) {
+            const cell = cells[y][x];
+            if (!cell.pathParent || cell.pathParent.cells.length === 0)
+                continue;
+            const pathCells = cell.pathParent.cells;
+            const indexInPath = pathCells.indexOf(cell);
+            const prevCellInPath = pathCells[indexInPath - 1];
+            const nextCellInPath = pathCells[indexInPath + 1];
+            if (!prevCellInPath && !nextCellInPath)
+                continue;
+            directionGrid[y][x].left =
+                (prevCellInPath && prevCellInPath.coordinates.x < cell.coordinates.x) ||
+                    (nextCellInPath && nextCellInPath.coordinates.x < cell.coordinates.x);
+            directionGrid[y][x].up =
+                (prevCellInPath && prevCellInPath.coordinates.y < cell.coordinates.y) ||
+                    (nextCellInPath && nextCellInPath.coordinates.y < cell.coordinates.y);
+            directionGrid[y][x].right =
+                (prevCellInPath && prevCellInPath.coordinates.x > cell.coordinates.x) ||
+                    (nextCellInPath && nextCellInPath.coordinates.x > cell.coordinates.x);
+            directionGrid[y][x].down =
+                (prevCellInPath && prevCellInPath.coordinates.y > cell.coordinates.y) ||
+                    (nextCellInPath && nextCellInPath.coordinates.y > cell.coordinates.y);
+        }
+    }
+    return directionGrid;
+}
+export function createEmptyDirectionGrid(width, height) {
+    return Array.from({ length: height }, (_) => Array.from({ length: width }, (_) => ({
+        left: false,
+        up: false,
+        right: false,
+        down: false,
+    })));
+}
 export function debugLog(message) {
     if (verbose)
         console.log(message);

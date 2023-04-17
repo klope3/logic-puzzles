@@ -22,3 +22,10 @@ export type Coordinates = {
   x: number;
   y: number;
 };
+
+export type DirectionSet = {
+  left: boolean;
+  up: boolean;
+  right: boolean;
+  down: boolean;
+};

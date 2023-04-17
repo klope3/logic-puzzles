@@ -1,12 +1,12 @@
-import './App.css'
-import { TohuWaVohu } from './components/TohuWaVohu/TohuWaVohu'
+import "./App.css";
+import { Numberlink } from "./components/Numberlink/Numberlink";
 
 function App() {
   return (
     <div className="App">
-      <TohuWaVohu />
+      <Numberlink />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

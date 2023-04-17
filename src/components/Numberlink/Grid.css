@@ -1,0 +1,19 @@
+.puzzle-grid {
+  display: grid;
+  max-width: 320px;
+  aspect-ratio: 1;
+  gap: 3px;
+}
+
+.cell {
+  background-color: gray;
+  position: relative;
+}
+
+.cell-number {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  font-size: 2rem;
+}
