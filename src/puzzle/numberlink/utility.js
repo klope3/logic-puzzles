@@ -4,15 +4,21 @@ export function puzzleFromNumberGrid(grid) {
         unsolved: grid,
         cells: Array.from({ length: grid.length }, (_) => []),
         paths: [],
+        numberPairCount: 0,
+        seed: undefined,
     };
+    const numbers = new Set();
     for (let y = 0; y < grid.length; y++) {
         for (let x = 0; x < grid[0].length; x++) {
+            if (grid[y][x] > 0)
+                numbers.add(grid[y][x]);
             puzzle.cells[y][x] = {
                 coordinates: { x, y },
                 pathParent: undefined,
             };
         }
     }
+    puzzle.numberPairCount = numbers.size;
     return puzzle;
 }
 export function getNeighborCells(puzzle, centerCoords) {
@@ -99,4 +105,15 @@ export function testPathInPuzzle(puzzle, pathNumber, coordinatesArray) {
 export function debugLog(message) {
     if (verbose)
         console.log(message);
+}
+//this function can be used by ANY grid-based puzzle and should be moved to a project-wide utility file
+export function flatIndexToCoords(index, gridWidth) {
+    return {
+        x: index % gridWidth,
+        y: Math.floor(index / gridWidth),
+    };
+}
+//this function can be used by ANY grid-based puzzle and should be moved to a project-wide utility file
+export function randomSeedNumber() {
+    return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 }

@@ -4,6 +4,8 @@ export type Puzzle = {
   unsolved: NumberGrid;
   cells: Cell[][];
   paths: Path[];
+  numberPairCount: number;
+  seed: number | undefined;
 };
 
 export type Cell = {

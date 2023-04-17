@@ -11,8 +11,10 @@ export function solve(puzzle: Puzzle) {
 
   let safety = 0;
   const safetyMax = 99999;
+  let completePaths = 0;
   while (safety < safetyMax) {
     let deductionsThisPass = 0;
+    completePaths = 0;
     for (const p of puzzle.paths) {
       const pathStartCoords = p.cells[0].coordinates;
       const pathEndCoords = p.cells[p.cells.length - 1].coordinates;
@@ -20,15 +22,27 @@ export function solve(puzzle: Puzzle) {
         p.cells.length > 1 &&
         puzzle.unsolved[pathStartCoords.y][pathStartCoords.x] === p.number &&
         puzzle.unsolved[pathEndCoords.y][pathEndCoords.x] === p.number;
-      if (pathComplete) continue;
+      if (pathComplete) {
+        completePaths++;
+        continue;
+      }
 
       if (tryNecessaryPathExtension(puzzle, p)) deductionsThisPass++;
     }
     if (deductionsThisPass === 0) break;
     safety++;
   }
-  debugLog("done in " + safety + " passes");
-  if (safety === safetyMax) console.error("Infinite loop!");
+  if (safety < safetyMax) {
+    if (completePaths === puzzle.numberPairCount) {
+      debugLog("SOLVED in " + safety + " passes");
+      return true;
+    }
+    debugLog("puzzle solving FAILED======================");
+    return false;
+  } else {
+    console.error("Infinite loop!");
+    return false;
+  }
 }
 
 function startAllPaths(puzzle: Puzzle) {
@@ -60,9 +74,7 @@ function tryNecessaryPathExtension(puzzle: Puzzle, path: Path) {
   );
 
   if (!canGoLeft && !canGoUp && !canGoRight && !canGoDown) {
-    console.error(
-      "Path " + path.number + " is stuck at " + getCoordsString(coords)
-    );
+    debugLog("Path " + path.number + " is stuck at " + getCoordsString(coords));
     return false;
   }
   if (left && canGoLeft && !canGoUp && !canGoRight && !canGoDown) {
