@@ -158,18 +158,22 @@ export function puzzleToDirectionGrid(puzzle: Puzzle): DirectionSet[][] {
       const nextCellInPath = pathCells[indexInPath + 1];
       if (!prevCellInPath && !nextCellInPath) continue;
 
-      directionGrid[y][x].left =
+      directionGrid[y][x].left = !!(
         (prevCellInPath && prevCellInPath.coordinates.x < cell.coordinates.x) ||
-        (nextCellInPath && nextCellInPath.coordinates.x < cell.coordinates.x);
-      directionGrid[y][x].up =
+        (nextCellInPath && nextCellInPath.coordinates.x < cell.coordinates.x)
+      );
+      directionGrid[y][x].up = !!(
         (prevCellInPath && prevCellInPath.coordinates.y < cell.coordinates.y) ||
-        (nextCellInPath && nextCellInPath.coordinates.y < cell.coordinates.y);
-      directionGrid[y][x].right =
+        (nextCellInPath && nextCellInPath.coordinates.y < cell.coordinates.y)
+      );
+      directionGrid[y][x].right = !!(
         (prevCellInPath && prevCellInPath.coordinates.x > cell.coordinates.x) ||
-        (nextCellInPath && nextCellInPath.coordinates.x > cell.coordinates.x);
-      directionGrid[y][x].down =
+        (nextCellInPath && nextCellInPath.coordinates.x > cell.coordinates.x)
+      );
+      directionGrid[y][x].down = !!(
         (prevCellInPath && prevCellInPath.coordinates.y > cell.coordinates.y) ||
-        (nextCellInPath && nextCellInPath.coordinates.y > cell.coordinates.y);
+        (nextCellInPath && nextCellInPath.coordinates.y > cell.coordinates.y)
+      );
     }
   }
 

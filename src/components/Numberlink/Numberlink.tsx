@@ -11,13 +11,36 @@ import { useState } from "react";
 import { DirectionSet } from "../../puzzle/numberlink/types";
 
 const puzzle = puzzleFromNumberGrid(easy1);
+solve(puzzle);
+const solutionGrid = puzzleToDirectionGrid(puzzle);
 
 export function Numberlink() {
   const [directionGridState, setDirectionGridState] = useState(
     createEmptyDirectionGrid(5, 5)
   );
+  const [isSolved, setIsSolved] = useState(false);
+
+  function checkSolved() {
+    for (let y = 0; y < solutionGrid.length; y++) {
+      for (let x = 0; x < solutionGrid[0].length; x++) {
+        const current = directionGridState[y][x];
+        const correct = solutionGrid[y][x];
+        if (
+          current.down !== correct.down ||
+          current.up !== correct.up ||
+          current.right !== correct.right ||
+          current.down !== correct.down
+        ) {
+          return;
+        }
+      }
+    }
+    setIsSolved(true);
+  }
 
   function clickGrid(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
+    if (isSolved) return;
+
     const clicked = e.target as HTMLElement;
     if (
       clicked.dataset.clickzonesource === undefined ||
@@ -42,13 +65,17 @@ export function Numberlink() {
     }
 
     setDirectionGridState(newDirectionGrid);
+    checkSolved();
   }
 
   return (
-    <Grid
-      puzzle={puzzle}
-      clickFunction={clickGrid}
-      directionGridState={directionGridState}
-    />
+    <>
+      <Grid
+        puzzle={puzzle}
+        clickFunction={clickGrid}
+        directionGridState={directionGridState}
+      />
+      {isSolved && <div>Solved!</div>}
+    </>
   );
 }
