@@ -7,18 +7,50 @@ import {
   puzzleToDirectionGrid,
 } from "../../puzzle/numberlink/utility";
 import { solve } from "../../puzzle/numberlink/solve";
-import { useState } from "react";
-import { DirectionSet } from "../../puzzle/numberlink/types";
-
-const puzzle = puzzleFromNumberGrid(easy1);
-solve(puzzle);
-const solutionGrid = puzzleToDirectionGrid(puzzle);
+import { useEffect, useState } from "react";
+import { DirectionSet, Puzzle } from "../../puzzle/numberlink/types";
+import { generate } from "../../puzzle/numberlink/generate";
 
 export function Numberlink() {
+  const [puzzle, setPuzzle] = useState({} as Puzzle);
+  const [solutionGrid, setSolutionGrid] = useState([] as DirectionSet[][]);
   const [directionGridState, setDirectionGridState] = useState(
-    createEmptyDirectionGrid(5, 5)
+    [] as DirectionSet[][]
   );
   const [isSolved, setIsSolved] = useState(false);
+  const [generateWidth, setGenerateWidth] = useState(5);
+  const [generateHeight, setGenerateHeight] = useState(5);
+  const [generateSeed, setGenerateSeed] = useState(0);
+
+  useEffect(() => {
+    // const puzzle = generate(5, 5);
+    // if (!puzzle) return;
+
+    // setSolutionGrid(puzzleToDirectionGrid(puzzle));
+    // const cleaned = puzzleFromNumberGrid(puzzle.unsolved);
+    // setPuzzle(cleaned);
+    generatePuzzle();
+  }, []);
+
+  function generatePuzzle(
+    width: number = 5,
+    height: number = 5,
+    seed?: number
+  ) {
+    const puzzle = generate(width, height, seed);
+    if (!puzzle) {
+      console.error("Generation failed!");
+      return;
+    }
+
+    setSolutionGrid(puzzleToDirectionGrid(puzzle));
+    const cleaned = puzzleFromNumberGrid(puzzle.unsolved);
+    setPuzzle(cleaned);
+    setDirectionGridState(
+      createEmptyDirectionGrid(generateWidth, generateHeight)
+    );
+    setIsSolved(false);
+  }
 
   function checkSolved() {
     for (let y = 0; y < solutionGrid.length; y++) {
@@ -70,12 +102,70 @@ export function Numberlink() {
 
   return (
     <>
-      <Grid
-        puzzle={puzzle}
-        clickFunction={clickGrid}
-        directionGridState={directionGridState}
-      />
+      {puzzle.unsolved !== undefined && (
+        <Grid
+          puzzle={puzzle}
+          clickFunction={clickGrid}
+          directionGridState={directionGridState}
+        />
+      )}
       {isSolved && <div>Solved!</div>}
+      <label htmlFor="width">
+        Width:
+        <input
+          type="number"
+          name="width"
+          id="width"
+          min={5}
+          onChange={(e) => setGenerateWidth(+e.target.value)}
+        />
+      </label>
+      <label htmlFor="height">
+        Height:
+        <input
+          type="number"
+          name="height"
+          id="height"
+          min={5}
+          onChange={(e) => setGenerateHeight(+e.target.value)}
+        />
+      </label>
+      <label htmlFor="seed">
+        Seed:
+        <input
+          type="number"
+          name="seed"
+          id="seed"
+          min={0}
+          onChange={(e) => setGenerateSeed(+e.target.value)}
+        />
+      </label>
+      <button
+        onClick={() =>
+          generatePuzzle(generateWidth, generateHeight, generateSeed)
+        }
+      >
+        Generate
+      </button>
+      <button
+        onClick={() => {
+          setDirectionGridState(solutionGrid);
+          setIsSolved(true);
+        }}
+      >
+        Solve
+      </button>
+      <button
+        onClick={() => {
+          setDirectionGridState(
+            createEmptyDirectionGrid(generateWidth, generateHeight)
+          );
+          setPuzzle(puzzleFromNumberGrid(puzzle.unsolved));
+          setIsSolved(false);
+        }}
+      >
+        Reset
+      </button>
     </>
   );
 }
