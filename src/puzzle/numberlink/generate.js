@@ -1,27 +1,39 @@
 import { debugLog, flatIndexToCoords, puzzleFromNumberGrid, randomSeedNumber, } from "./utility.js";
 import { mulberry32 } from "../../seededRandom.js";
 import { solve } from "./solve.js";
-export function generate(width, height, seed) {
-    if (seed === undefined)
-        seed = randomSeedNumber();
-    let safety = 0;
-    const safetyMax = 9999;
+export function generate(width, height, seed, pairs) {
+    seed = randomSeedNumber(seed);
+    let attempts = 0;
+    const attemptsMax = 999999;
     let seedOffset = 0;
-    while (safety < safetyMax) {
+    if (pairs === undefined)
+        pairs = 5;
+    const startTime = Date.now();
+    let failures = 0;
+    while (attempts < attemptsMax) {
         debugLog("starting a new grid");
         const nums = createEmptyNumberGrid(width, height);
-        fillRandomPairs(nums, 5, seed + seedOffset);
+        fillRandomPairs(nums, pairs, seed + seedOffset);
         const puzzle = puzzleFromNumberGrid(nums);
         if (solve(puzzle)) {
             puzzle.seed = seed;
-            console.log("done in " + safety + " attempts with seed " + seed);
-            return puzzle;
+            // console.log("done in " + attempts + " attempts with seed " + seed);
+            return {
+                puzzle,
+                attempts,
+                executionMs: Date.now() - startTime,
+            };
         }
         seedOffset++;
-        safety++;
+        attempts++;
+        failures++;
     }
-    if (safety === safetyMax)
-        console.error("Infinite loop!");
+    // console.error("Too many attempts!");
+    return {
+        puzzle: undefined,
+        attempts,
+        executionMs: Date.now() - startTime,
+    };
 }
 function fillRandomPairs(numberGrid, pairs, seed) {
     const width = numberGrid[0].length;

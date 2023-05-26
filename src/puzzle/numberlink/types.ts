@@ -29,3 +29,9 @@ export type DirectionSet = {
   right: boolean;
   down: boolean;
 };
+
+export type GenerationResult = {
+  puzzle: Puzzle | undefined;
+  attempts: number;
+  executionMs: number;
+};

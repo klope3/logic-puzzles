@@ -37,14 +37,14 @@ export function Numberlink() {
     height: number = 5,
     seed?: number
   ) {
-    const puzzle = generate(width, height, seed);
-    if (!puzzle) {
+    const result = generate(width, height, seed);
+    if (!result.puzzle) {
       console.error("Generation failed!");
       return;
     }
 
-    setSolutionGrid(puzzleToDirectionGrid(puzzle));
-    const cleaned = puzzleFromNumberGrid(puzzle.unsolved);
+    setSolutionGrid(puzzleToDirectionGrid(result.puzzle));
+    const cleaned = puzzleFromNumberGrid(result.puzzle.unsolved);
     setPuzzle(cleaned);
     setDirectionGridState(
       createEmptyDirectionGrid(generateWidth, generateHeight)

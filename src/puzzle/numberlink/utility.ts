@@ -1,3 +1,4 @@
+import { mulberry32 } from "../../seededRandom.js";
 import {
   Cell,
   Coordinates,
@@ -206,7 +207,9 @@ export function flatIndexToCoords(index: number, gridWidth: number) {
   };
 }
 
-//this function can be used by ANY grid-based puzzle and should be moved to a project-wide utility file
-export function randomSeedNumber() {
-  return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+//this function can be used by ANY seed-based puzzle and should be moved to a project-wide utility file
+export function randomSeedNumber(prevSeed?: number) {
+  const randFactor =
+    prevSeed === undefined ? Math.random() : mulberry32(prevSeed);
+  return Math.floor(randFactor * Number.MAX_SAFE_INTEGER);
 }

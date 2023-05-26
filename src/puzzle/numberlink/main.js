@@ -1,8 +1,7 @@
-import { generate } from "./generate.js";
-import { printPuzzle } from "./utility.js";
+import { testSizesAndPairs } from "./tests.js";
 // const puzzle: Puzzle = puzzleFromNumberGrid(easy1);
 // solve(puzzle);
-const puzzle = generate(5, 5);
-console.log("puzzle seed is " + (puzzle === null || puzzle === void 0 ? void 0 : puzzle.seed));
-if (puzzle)
-    printPuzzle(puzzle);
+// const { puzzle } = generate(7, 5, 0, 3);
+// console.log("puzzle seed is " + puzzle?.seed);
+// if (puzzle) printPuzzle(puzzle);
+testSizesAndPairs();
