@@ -34,7 +34,7 @@ export function Numberlink() {
     seed?: number
   ) {
     const result = generate(width, height, seed);
-    if (!result.puzzle) {
+    if (!result.puzzle || !result.solution) {
       console.error("Generation failed!");
       return;
     }
@@ -42,6 +42,7 @@ export function Numberlink() {
     // setSolutionGrid(puzzleToDirectionGrid(result.puzzle));
     // const cleaned = puzzleFromNumberGrid(result.puzzle.unsolved);
     setPuzzle(result.puzzle);
+    setSolutionGrid(result.solution);
     setPathGridState(createEmptyPathGrid(generateWidth, generateHeight));
     setIsSolved(false);
   }

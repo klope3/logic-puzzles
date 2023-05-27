@@ -78,15 +78,21 @@ function pathGridFromSolvingData(solvingData: SolvingData): PathGrid {
 function createEmptySolvingData(puzzle: NumberGrid): SolvingData {
   const data: SolvingData = {
     unsolved: puzzle,
-    cells: Array.from({ length: puzzle.length }, (_, y) =>
-      Array.from({ length: puzzle[0].length }, (_, x) => ({
-        coordinates: { x, y },
-        pathParent: undefined,
-      }))
-    ),
+    cells: Array.from({ length: puzzle.length }, (_) => []),
     paths: [],
     numberPairCount: 0,
   };
+  const numbers = new Set<number>();
+  for (let y = 0; y < puzzle.length; y++) {
+    for (let x = 0; x < puzzle[0].length; x++) {
+      if (puzzle[y][x] > 0) numbers.add(puzzle[y][x]);
+      data.cells[y][x] = {
+        coordinates: { x, y },
+        pathParent: undefined,
+      };
+    }
+  }
+  data.numberPairCount = numbers.size;
   return data;
 }
 
