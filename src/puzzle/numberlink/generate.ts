@@ -29,7 +29,6 @@ export function generate(
     const puzzle = puzzleFromNumberGrid(nums);
     if (solve(puzzle)) {
       puzzle.seed = seed;
-      // console.log("done in " + attempts + " attempts with seed " + seed);
       return {
         puzzle,
         attempts,
@@ -41,7 +40,7 @@ export function generate(
     attempts++;
     failures++;
   }
-  // console.error("Too many attempts!");
+
   return {
     puzzle: undefined,
     attempts,
@@ -95,13 +94,6 @@ type PathCellNeighbors = {
   downRight: PathCell | undefined;
 };
 
-// type DirectionConstraints = {
-//   left: boolean | undefined;
-//   up: boolean | undefined;
-//   right: boolean | undefined;
-//   down: boolean | undefined;
-// };
-
 type Vector2 = {
   x: number;
   y: number;
@@ -109,73 +101,7 @@ type Vector2 = {
 
 type Direction = "left" | "up" | "right" | "down";
 
-// const permutations: PathCell[] = [
-//   {
-//     left: true,
-//     up: false,
-//     right: false,
-//     down: false,
-//   },
-//   {
-//     left: false,
-//     up: true,
-//     right: false,
-//     down: false,
-//   },
-//   {
-//     left: false,
-//     up: false,
-//     right: true,
-//     down: false,
-//   },
-//   {
-//     left: false,
-//     up: false,
-//     right: false,
-//     down: true,
-//   },
-//   {
-//     left: true,
-//     up: false,
-//     right: true,
-//     down: false,
-//   },
-//   {
-//     left: false,
-//     up: true,
-//     right: true,
-//     down: false,
-//   },
-//   {
-//     left: true,
-//     up: false,
-//     right: false,
-//     down: true,
-//   },
-//   {
-//     left: false,
-//     up: false,
-//     right: true,
-//     down: true,
-//   },
-//   {
-//     left: true,
-//     up: true,
-//     right: false,
-//     down: false,
-//   },
-//   {
-//     left: false,
-//     up: true,
-//     right: true,
-//     down: false,
-//   },
-// ];
-
-// const generated = generateGrid(5, 5);
-// printGrid(generated);
-
-export function generateGridAlt(
+export function generateFallback(
   width: number,
   height: number,
   seed: number
@@ -209,7 +135,6 @@ export function generateGridAlt(
     safety < 999
   ) {
     const cellsFilled = drawWrappingPath(grid, seed, pathNumber);
-    console.log(cellsFilled + " cells filled; " + cellsLeft + " cells left");
     if (cellsFilled === 0) {
       passesWithNoFills++;
     } else {
@@ -225,8 +150,6 @@ export function generateGridAlt(
   cleanUpSingleEmpties(grid, seed);
   cleanUpShortPaths(grid, seed);
   const numberGrid = extractNumberGrid(grid);
-  console.log("Finished grid:");
-  console.log(numberGrid);
 
   return grid;
 }
@@ -248,8 +171,6 @@ function extractNumberGrid(grid: PathGrid): NumberGrid {
     usedEndpoints.push(path[path.length - 1]);
     paths.push(path);
   }
-  console.log("Paths:");
-  console.log(paths);
   for (let i = 0; i < paths.length; i++) {
     const path = paths[i];
     const endpoint1 = path[0];
@@ -262,9 +183,6 @@ function extractNumberGrid(grid: PathGrid): NumberGrid {
 }
 
 function followPathToEnd(grid: PathGrid, firstEndpoint: Vector2) {
-  console.log(
-    "Following path starting at " + firstEndpoint.x + ", " + firstEndpoint.y
-  );
   const points: Vector2[] = [];
   let curPoint = firstEndpoint;
   let cameFromPoint: Vector2 | undefined;
@@ -291,8 +209,6 @@ function followPathToEnd(grid: PathGrid, firstEndpoint: Vector2) {
       curPoint = vectorSum(curPoint, nextDirectionDelta);
     }
   }
-  console.log("Reached end of path:");
-  console.log(points);
   return points;
 }
 
@@ -301,8 +217,8 @@ function getDirectionFromCell(
   directionToIgnore?: Direction
 ): Direction {
   if (!isCellPartiallyFilled(cell) && directionToIgnore === undefined) {
-    console.error(
-      "Warning: getting direction from a cell that's not partially filled, but no direction to ignore was specififed!"
+    console.warn(
+      "Getting direction from a cell that's not partially filled, but no direction to ignore was specififed!"
     );
   }
   type DirectionBoolean = {
@@ -331,7 +247,7 @@ function getDirectionFromCell(
     (db) => db.label !== directionToIgnore && db.bool
   );
   if (!match) {
-    console.error("Warning: Couldn't resolve correct direction for cell:");
+    console.error("Couldn't resolve correct direction for cell:");
     console.error(cell);
     return "left";
   }
@@ -339,7 +255,6 @@ function getDirectionFromCell(
 }
 
 function cleanUpSingleEmpties(grid: PathGrid, seed: number) {
-  console.log("cleaning up single empties");
   const width = grid[0].length;
   const height = grid.length;
   const allCoords = Array.from({ length: width * height }, (_, i) =>
@@ -360,39 +275,10 @@ function cleanUpSingleEmpties(grid: PathGrid, seed: number) {
     ).length;
     return filledNeighborCount === orthogonals.length;
   });
-  console.log("Found " + singleEmptyCoords.length + " single empties");
   for (let i = 0; i < singleEmptyCoords.length; i++) {
     const coords = singleEmptyCoords[i];
-    // const { left, upLeft, up, upRight, right, downRight, down, downLeft } =
-    //   getNeighborsAtCoords(coords, grid);
-    // const options: PathCell[] = [];
-    // const goingLeftWouldDoubleBack =
-    //   left &&
-    //   ((upLeft && left.up && upLeft.right) ||
-    //     (downLeft && left.down && downLeft.right));
-    // const goingUpWouldDoubleBack =
-    //   up &&
-    //   ((upLeft && up.left && upLeft.down) ||
-    //     (upRight && up.right && upRight.down));
-    // const goingRightWouldDoubleBack =
-    //   right &&
-    //   ((upRight && right.up && upRight.left) ||
-    //     (downRight && right.down && downRight.left));
-    // const goingDownWouldDoubleBack =
-    //   down &&
-    //   ((downRight && down.right && downRight.up) ||
-    //     (downLeft && down.left && downLeft.up));
-    // if (left && isCellPartiallyFilled(left) && !goingLeftWouldDoubleBack)
-    //   options.push(left);
-    // if (up && isCellPartiallyFilled(up) && !goingUpWouldDoubleBack)
-    //   options.push(up);
-    // if (right && isCellPartiallyFilled(right) && !goingRightWouldDoubleBack)
-    //   options.push(right);
-    // if (down && isCellPartiallyFilled(down) && !goingDownWouldDoubleBack)
-    //   options.push(down);
     const options = getPartialCellMergeOptions(coords, grid);
     if (options.length === 0) {
-      console.log("A single empty was impossible to fill");
       continue;
     }
     const randIndex = Math.floor(mulberry32(seed + i) * options.length);
@@ -439,12 +325,7 @@ function cleanUpShortPaths(grid: PathGrid, seed: number) {
     if (pathsToIgnore.includes(lengthTwoPaths[i])) continue;
     if (mulberry32(seed + i) < 0.5) lengthTwoPaths[i].reverse();
     for (const cell of lengthTwoPaths[i]) {
-      console.log(
-        `Trying to merge ${cell.coordinates.x}, ${cell.coordinates.y} with another path`
-      );
       const options = getPartialCellMergeOptions(cell.coordinates, grid);
-      console.log("It has these options:");
-      console.log(options);
       if (options.length === 0) continue;
       const randIndex = mulberry32(seed + i) & options.length;
       const cellToMergeWith = options[randIndex];
@@ -458,9 +339,6 @@ function cleanUpShortPaths(grid: PathGrid, seed: number) {
         cellToMergeWith.coordinates
       );
       drawPathSegment(grid, cell.coordinates, direction);
-      console.log(
-        `Merged ${cell.coordinates.x}, ${cell.coordinates.y} ${direction}`
-      );
       break;
     }
   }
@@ -535,8 +413,6 @@ function getPartialCellMergeOptions(
 }
 
 function drawWrappingPath(grid: PathGrid, seed: number, pathNumber: number) {
-  console.log("========================");
-  console.log("trying to draw wrapping path " + pathNumber);
   const width = grid[0].length;
   const height = grid.length;
   const allCoords = Array.from({ length: width * height }, (_, i) =>
@@ -561,8 +437,6 @@ function drawWrappingPath(grid: PathGrid, seed: number, pathNumber: number) {
   let drawn = 0;
   const limit = Math.floor(curPathsPerimeter.length / 2);
   const filledCoords = [randStart];
-  console.log("Start drawing wrapping path at:");
-  console.log(randStart);
 
   while (drawn < limit) {
     const neighbors = getNeighborsAtCoords(curCoords, grid);
@@ -572,46 +446,27 @@ function drawWrappingPath(grid: PathGrid, seed: number, pathNumber: number) {
       neighbors.right,
       neighbors.down,
     ];
-    const nextCellOptions = orthogonals.filter(
-      (cell) => {
-        if (
-          !cell ||
-          doesCellHaveSegment(cell) ||
-          !findCoordsIn(cell.coordinates, curPathsPerimeter)
-        )
-          return false;
-        const neighbors = getNeighborsAtCoords(cell.coordinates, grid);
-        const orthogonals = [
-          neighbors.left,
-          neighbors.up,
-          neighbors.right,
-          neighbors.down,
-        ];
-        const doublesBack =
-          orthogonals.filter(
-            (cell) => cell && findCoordsIn(cell.coordinates, filledCoords)
-          ).length === 2;
-        return !doublesBack;
-      }
-      // (cell) =>
-      //   cell &&
-      //   !doesCellHaveSegment(cell) &&
-      //   findCoordsIn(cell.coordinates, curPathsPerimeter)
-    );
-    // const nextCell = orthogonals.find((cell) => {
-    //   if (!cell || doesCellHaveSegment(cell)) return false;
-    //   const neighborsHere = getNeighborsAtCoords(cell.coordinates, grid);
-    //   const neighborsArr = neighborsAsArray(neighborsHere);
-    //   const orthogonals = [
-    //     neighborsHere.left,
-    //     neighborsHere.up,
-    //     neighborsHere.right,
-    //     neighborsHere.down,
-    //   ];
-    //   return !!neighborsArr.find((cell) => cell && doesCellHaveSegment(cell));
-    // });
+    const nextCellOptions = orthogonals.filter((cell) => {
+      if (
+        !cell ||
+        doesCellHaveSegment(cell) ||
+        !findCoordsIn(cell.coordinates, curPathsPerimeter)
+      )
+        return false;
+      const neighbors = getNeighborsAtCoords(cell.coordinates, grid);
+      const orthogonals = [
+        neighbors.left,
+        neighbors.up,
+        neighbors.right,
+        neighbors.down,
+      ];
+      const doublesBack =
+        orthogonals.filter(
+          (cell) => cell && findCoordsIn(cell.coordinates, filledCoords)
+        ).length === 2;
+      return !doublesBack;
+    });
 
-    console.log("Have " + nextCellOptions.length + " options");
     const randIndex = Math.floor(
       mulberry32(seed + pathNumber) * nextCellOptions.length
     );
@@ -629,117 +484,6 @@ function drawWrappingPath(grid: PathGrid, seed: number, pathNumber: number) {
     }
   }
   return drawn > 0 ? drawn + 1 : 0;
-
-  // console.log("initial perimter is:");
-  // console.log(curPathsPerimeter);
-  // const orderedPerimeter = [curPathsPerimeter[0]];
-  // let safety = 0;
-  // while (safety < 999) {
-  //   if (orderedPerimeter.length === curPathsPerimeter.length) break;
-  //   const lastAdded = orderedPerimeter[orderedPerimeter.length - 1];
-  //   const neighbors = getNeighborsAtCoords(lastAdded, grid);
-  //   const orthogonals = [
-  //     neighbors.left,
-  //     neighbors.up,
-  //     neighbors.right,
-  //     neighbors.down,
-  //   ];
-  //   const nextNeighborOnPerimeter = orthogonals.find(
-  //     (cell) =>
-  //       cell &&
-  //       findCoordsIn(cell.coordinates, curPathsPerimeter) &&
-  //       !findCoordsIn(cell.coordinates, orderedPerimeter)
-  //   );
-  //   if (!nextNeighborOnPerimeter) {
-  //     console.log(
-  //       "unable to order the full perimeter, probably due to grid edge"
-  //     );
-  //     break;
-  //   }
-  //   orderedPerimeter.push(nextNeighborOnPerimeter.coordinates);
-  //   safety++;
-  // }
-  // if (safety === 999) {
-  //   console.error("infinite loop in ordering perimeter");
-  // }
-  // if (mulberry32(seed + pathNumber) < 0.5) {
-  //   orderedPerimeter.reverse();
-  // }
-
-  // let curIndex = Math.floor(
-  //   mulberry32(seed + pathNumber) * orderedPerimeter.length
-  // );
-  // let drawn = 0;
-  // const limit = Math.floor(orderedPerimeter.length * 0.5);
-  // console.log("draw starting at:");
-  // console.log(orderedPerimeter[curIndex]);
-  // while (drawn < limit && drawn < orderedPerimeter.length - 1) {
-  //   const nextIndex =
-  //     curIndex === orderedPerimeter.length - 1 ? 0 : curIndex + 1;
-  //   if (
-  //     !areCoordinatesOrthogonal(
-  //       orderedPerimeter[curIndex],
-  //       orderedPerimeter[nextIndex]
-  //     )
-  //   ) {
-  //     break;
-  //   }
-  //   const direction = getOrthoDirectionFromTo(
-  //     orderedPerimeter[curIndex],
-  //     orderedPerimeter[nextIndex]
-  //   );
-  //   drawPathSegment(grid, orderedPerimeter[curIndex], direction);
-  //   console.log("drew a segment " + direction + " from:");
-  //   console.log(orderedPerimeter[curIndex]);
-  //   drawn++;
-  //   curIndex = nextIndex;
-  // }
-  // return drawn > 0 ? drawn + 1 : 0;
-
-  // const randIndex = Math.floor(
-  //   mulberry32(seed + pathNumber) * curPathsPerimeter.length
-  // );
-  // const randStart = curPathsPerimeter[randIndex];
-  // console.log("Start drawing wrapping path at:");
-  // console.log(randStart);
-  // const { left, up, right, down } = getNeighborsAtCoords(randStart, grid);
-  // const orthogonals = [left, up, right, down];
-  // const nextCellOptions = orthogonals.filter((cell) => {
-  //   if (!cell || doesCellHaveSegment(cell)) return false;
-  //   const neighborsHere = getNeighborsAtCoords(cell.coordinates, grid);
-  //   const neighborsWithAnySegment = neighborsAsArray(neighborsHere).filter(
-  //     (neighbor) => neighbor && doesCellHaveSegment(neighbor)
-  //   );
-  //   return neighborsWithAnySegment.length > 0;
-  // });
-  // console.log("next cell options are:");
-  // console.log(nextCellOptions);
-
-  // const nextCell =
-  //   nextCellOptions.length < 2 ? nextCellOptions[0] : nextCellOptions[1];
-  // if (!nextCell) {
-  //   console.error("Wrapping path had no options!");
-  //   return;
-  // }
-  // let curDirection = getOrthoDirectionFromTo(randStart, nextCell.coordinates);
-  // drawPathSegment(grid, randStart, curDirection);
-  // let curCell: PathCell | undefined = nextCell;
-
-  // if (curCell && (curDirection === "up" || curDirection === "down")) {
-  //   const neighbors = getNeighborsAtCoords(curCell.coordinates, grid);
-  //   const neighborsToCheck = [neighbors.left, neighbors.right];
-  //   const neighborWithSegment = neighborsToCheck.find(
-  //     (cell) => cell && doesCellHaveSegment(cell)
-  //   );
-  //   if (neighborWithSegment) {
-  //     console.log("maintain course because this neighbor has a segment:");
-  //     console.log(neighborWithSegment);
-  //     drawPathSegment(grid, curCell.coordinates, curDirection);
-  //     curCell = curDirection === "up" ? neighbors.up : neighbors.down;
-  //   } else {
-  //     console.log("no neighbors on left or right; must change direction");
-  //   }
-  // }
 }
 
 function findCoordsIn(coords: Vector2, arr: Vector2[]) {
@@ -765,7 +509,7 @@ function drawInitialPath(grid: PathGrid, seed: number) {
     safety++;
   }
   if (safety === 999) {
-    console.log("Infinite loop in drawInitialPath");
+    console.error("Infinite loop in drawInitialPath");
   }
   if (distAToB.deltaX < distAToB.deltaY) {
     randPointB.x = randPointA.x;
@@ -815,7 +559,7 @@ function drawPathFromTo(grid: PathGrid, a: Vector2, b: Vector2) {
     safety++;
   }
   if (safety === 999) {
-    console.log("Infinite loop in drawPathFromTo");
+    console.error("Infinite loop in drawPathFromTo");
   }
 }
 
@@ -845,10 +589,6 @@ function vectorSum(a: Vector2, b: Vector2) {
 
 function areVectorsEqual(a: Vector2, b: Vector2) {
   return a.x === b.x && a.y === b.y;
-}
-
-function areCoordinatesOrthogonal(a: Vector2, b: Vector2) {
-  return getTaxicabDistance(a, b).distance === 1;
 }
 
 function getOrthoDirectionDelta(direction: Direction): Vector2 {
@@ -883,119 +623,6 @@ function getOrthoDirectionFromTo(start: Vector2, end: Vector2): Direction {
   if (end.y < start.y) return "up";
   return "down";
 }
-
-// function isInBounds(coords: Vector2, grid: PathGrid) {
-//   return (
-//     coords.x >= 0 &&
-//     coords.y >= 0 &&
-//     coords.x < grid[0].length &&
-//     coords.y < grid.length
-//   );
-// }
-
-// export function generateGrid(width: number, height: number) {
-//   const grid: PathGrid = Array.from({ length: height }, () => []);
-
-//   // for (let y = 0; y < height; y++) {
-//   //   for (let x = 0; x < width; x++) {
-//   //     const constraints = getConstraintsForCellCoords({ x, y }, grid);
-//   //     grid[y][x] = pickRandomPermuationWithConstraint(
-//   //       constraints,
-//   //       coordsToFlatIndex({ x, y }, width)
-//   //     );
-//   //   }
-//   // }
-
-//   const totalCells = width * height;
-//   let curIndex = 0;
-//   while (curIndex < totalCells) {
-//     const coords = flatIndexToCoords(curIndex, width);
-//     const neighbors = getNeighborsAtCoords(coords, grid);
-//     const puzzleRightEdge = coords.x === width - 1;
-//     const puzzleBottomEdge = coords.y === height - 1;
-
-//     const options = permutations.filter((perm) => {
-//       const constraints: DirectionConstraints = {
-//         left: undefined,
-//         up: undefined,
-//         right: undefined,
-//         down: undefined,
-//       };
-
-//       constraints.left =
-//         neighbors.left === undefined ? false : neighbors.left.right;
-//       constraints.up = neighbors.up === undefined ? false : neighbors.up.down;
-
-//       if (puzzleRightEdge) {
-//         constraints.right = false;
-//       } else if (neighbors.right !== undefined) {
-//         constraints.right = neighbors.right.left;
-//       }
-
-//       if (puzzleBottomEdge) {
-//         constraints.down = false;
-//       } else if (neighbors.down !== undefined) {
-//         constraints.down = neighbors.down.up;
-//       }
-
-//       if (
-//         (constraints.left !== undefined && constraints.left !== perm.left) ||
-//         (constraints.up !== undefined && constraints.up !== perm.up) ||
-//         (constraints.right !== undefined && constraints.right !== perm.right) ||
-//         (constraints.down !== undefined && constraints.down !== perm.down)
-//       )
-//         return false;
-
-//       if (
-//         (perm.left &&
-//           perm.up &&
-//           neighbors.left !== undefined &&
-//           neighbors.left.right &&
-//           neighbors.left.up) ||
-//         (perm.left &&
-//           perm.up &&
-//           neighbors.up !== undefined &&
-//           neighbors.up.down &&
-//           neighbors.up.left) ||
-//         (perm.up &&
-//           perm.right &&
-//           neighbors.up !== undefined &&
-//           neighbors.up.down &&
-//           neighbors.up.right) ||
-//         (perm.left &&
-//           perm.down &&
-//           neighbors.left !== undefined &&
-//           neighbors.left.right &&
-//           neighbors.left.down)
-//       )
-//         return false;
-//       return true;
-//     });
-
-//     if (options.length === 0) {
-//       grid[coords.y][coords.x] = {
-//         left: false,
-//         up: false,
-//         right: false,
-//         down: false,
-//         coordinates: {
-//           x: coords.x,
-//           y: coords.y
-//         }
-//       };
-//       curIndex++;
-//       continue;
-//     }
-
-//     const seed = Math.floor(mulberry32(0) * Number.MAX_SAFE_INTEGER);
-//     const randIndex = Math.floor(mulberry32(seed + curIndex) * options.length);
-//     grid[coords.y][coords.x] = options[randIndex];
-
-//     curIndex++;
-//   }
-
-//   return grid;
-// }
 
 function neighborsAsArray(neighbors: PathCellNeighbors) {
   return [
@@ -1035,103 +662,3 @@ function getOrthogonalNeighborsAtCoords({ x, y }: Vector2, grid: PathGrid) {
     down: all.down,
   };
 }
-
-// // function getConstraintsForCellCoords(
-// //   { x, y }: Coordinates,
-// //   grid: PathGrid
-// // ): DirectionConstraints {
-// //   const constraints: DirectionConstraints = {
-// //     left: undefined,
-// //     up: undefined,
-// //     right: undefined,
-// //     down: undefined,
-// //   };
-
-// //   const width = grid[0].length;
-// //   const height = grid.length;
-// //   const puzzleRightEdge = x === width - 1;
-// //   const puzzleBottomEdge = y === height - 1;
-
-// //   const neighbors = getNeighborsAtCoords({ x, y }, grid);
-// //   constraints.left =
-// //     neighbors.left === undefined ? false : neighbors.left.right;
-// //   constraints.up = neighbors.up === undefined ? false : neighbors.up.down;
-
-// //   if (puzzleRightEdge) {
-// //     constraints.right = false;
-// //   } else if (neighbors.right !== undefined) {
-// //     constraints.right = neighbors.right.left;
-// //   }
-
-// //   if (puzzleBottomEdge) {
-// //     constraints.down = false;
-// //   } else if (neighbors.down !== undefined) {
-// //     constraints.down = neighbors.down.up;
-// //   }
-
-// //   return constraints;
-// // }
-
-// // function pickRandomPermuationWithConstraint(
-// //   { left, up, right, down }: DirectionConstraints,
-// //   flatIndex: number
-// // ): PathCell {
-// //   const options = permutations.filter(
-// //     (perm) =>
-// //       (left === undefined || left === perm.left) &&
-// //       (up === undefined || up === perm.up) &&
-// //       (right === undefined || right === perm.right) &&
-// //       (down === undefined || down === perm.down)
-// //   );
-// //   if (options.length === 0) {
-// //     return {
-// //       left: false,
-// //       up: false,
-// //       right: false,
-// //       down: false,
-// //     };
-// //   }
-// //   const seed = Math.floor(mulberry32(0) * Number.MAX_SAFE_INTEGER);
-// //   const randIndex = Math.floor(mulberry32(seed + flatIndex) * options.length);
-// //   return options[randIndex];
-// // }
-
-// function getCellVisual(cell: PathCell) {
-//   const { left, up, right, down } = cell;
-//   if (left && up && !right && !down) return "┘ ";
-//   if (left && right && !up && !down) return "——";
-//   if (left && down && !up && !right) return "┐ ";
-//   if (up && right && !left && !down) return "└—";
-//   if (down && right && !left && !up) return "┌—";
-//   if (up && down && !left && !right) return "| ";
-//   if (!up && !down && !left && !right) return ". ";
-
-//   if (left && !up && !right && !down) return "- ";
-//   if (right && !left && !up && !down) return " -";
-//   if (up && !left && !right && !down) return "' ";
-//   if (down && !left && !up && !right) return ", ";
-
-//   // if ([left, up, right, down].filter((d) => d).length === 1) return "X "; //endpoint
-
-//   return "? ";
-// }
-
-// function printGrid(grid: PathGrid) {
-//   for (let y = 0; y < grid.length; y++) {
-//     let str = "";
-//     for (let x = 0; x < grid[0].length; x++) {
-//       str += getCellVisual(grid[y][x]);
-//     }
-//     console.log(str);
-//   }
-//   // if (left && up && !right && !down) return "┘ ";
-//   // if (left && right && !up && !down) return "——";
-//   // if (left && down && !up && !right) return "┐ ";
-//   // if (up && right && !left && !down) return "└—";
-//   // if (down && right && !left && !up) return "┌—";
-//   // if (up && down) return "| ";
-// }
-
-// // function coordsToFlatIndex(coords: Coordinates, gridWidth: number) {
-// //   return gridWidth * coords.y + coords.x;
-// // }
