@@ -6,6 +6,12 @@ import {
 import { useEffect, useState } from "react";
 import { NumberGrid, PathGrid } from "../../puzzle/numberlink/types";
 import { generate } from "../../puzzle/numberlink/generate";
+import {
+  areVectorsEqual,
+  followPathToEnd,
+  isCellEmpty,
+  isCellPartiallyFilled,
+} from "../../puzzle/numberlink/gridLogic";
 
 const initialWidth = 5;
 const initialHeight = 5;
@@ -51,22 +57,30 @@ export function Numberlink() {
   }
 
   function checkSolved() {
-    return; //refactor later
-    for (let y = 0; y < solutionGrid.length; y++) {
-      for (let x = 0; x < solutionGrid[0].length; x++) {
-        const current = pathGridState[y][x];
-        const correct = solutionGrid[y][x];
+    const pathsToFind = new Set([...puzzle.flat().filter((a) => a !== 0)]);
+    console.log("paths to find:");
+    console.log(pathsToFind);
+    const completePathsFound: number[] = [];
+    for (let y = 0; y < puzzle.length; y++) {
+      for (let x = 0; x < puzzle[0].length; x++) {
+        if (puzzle[y][x] === 0 || completePathsFound.includes(puzzle[y][x]))
+          continue;
+        if (!isCellPartiallyFilled(pathGridState[y][x])) return;
+        console.log("Starting at " + puzzle[y][x]);
+        const path = followPathToEnd(pathGridState, { x, y });
+        if (path.length < 2) continue;
+        const start = path[0];
+        const end = path[path.length - 1];
         if (
-          current.down !== correct.down ||
-          current.up !== correct.up ||
-          current.right !== correct.right ||
-          current.down !== correct.down
+          !areVectorsEqual(start, end) &&
+          puzzle[start.y][start.x] === puzzle[end.y][end.x]
         ) {
-          return;
-        }
+          completePathsFound.push(puzzle[start.y][start.x]);
+          continue;
+        } else return;
       }
     }
-    setIsSolved(true);
+    if (completePathsFound.length === pathsToFind.size) setIsSolved(true);
   }
 
   function clickGrid(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {

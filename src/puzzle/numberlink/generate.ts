@@ -10,7 +10,15 @@ import {
 import { debugLog, flatIndexToCoords, randomSeedNumber } from "./utility.js";
 import { mulberry32 } from "../../seededRandom.js";
 import { solve } from "./solve.js";
-import { drawPathSegment, getOrthoDirectionFromTo } from "./gridLogic";
+import {
+  areVectorsEqual,
+  drawPathSegment,
+  followPathToEnd,
+  getOrthoDirectionDelta,
+  getOrthoDirectionFromTo,
+  isCellPartiallyFilled,
+  vectorSum,
+} from "./gridLogic";
 
 export function generate(
   width: number,
@@ -169,78 +177,6 @@ function extractNumberGrid(grid: PathGrid): NumberGrid {
   }
 
   return numberGrid;
-}
-
-function followPathToEnd(grid: PathGrid, firstEndpoint: Vector2) {
-  const points: Vector2[] = [];
-  let curPoint = firstEndpoint;
-  let cameFromPoint: Vector2 | undefined;
-  while (true) {
-    const cell = grid[curPoint.y][curPoint.x];
-    if (!cameFromPoint) {
-      const nextDirection = getDirectionFromCell(cell);
-      const nextDirectionDelta = getOrthoDirectionDelta(nextDirection);
-      cameFromPoint = curPoint;
-      points.push(curPoint);
-      curPoint = vectorSum(curPoint, nextDirectionDelta);
-    } else if (isCellPartiallyFilled(cell)) {
-      points.push(curPoint);
-      break;
-    } else {
-      const cameFromDirection = getOrthoDirectionFromTo(
-        curPoint,
-        cameFromPoint
-      );
-      const nextDirection = getDirectionFromCell(cell, cameFromDirection);
-      const nextDirectionDelta = getOrthoDirectionDelta(nextDirection);
-      cameFromPoint = curPoint;
-      points.push(curPoint);
-      curPoint = vectorSum(curPoint, nextDirectionDelta);
-    }
-  }
-  return points;
-}
-
-function getDirectionFromCell(
-  cell: PathCell,
-  directionToIgnore?: Direction
-): Direction {
-  if (!isCellPartiallyFilled(cell) && directionToIgnore === undefined) {
-    console.warn(
-      "Getting direction from a cell that's not partially filled, but no direction to ignore was specififed!"
-    );
-  }
-  type DirectionBoolean = {
-    label: Direction;
-    bool: boolean;
-  };
-  const directionBooleans: DirectionBoolean[] = [
-    {
-      label: "left",
-      bool: cell.left,
-    },
-    {
-      label: "up",
-      bool: cell.up,
-    },
-    {
-      label: "right",
-      bool: cell.right,
-    },
-    {
-      label: "down",
-      bool: cell.down,
-    },
-  ];
-  const match = directionBooleans.find(
-    (db) => db.label !== directionToIgnore && db.bool
-  );
-  if (!match) {
-    console.error("Couldn't resolve correct direction for cell:");
-    console.error(cell);
-    return "left";
-  }
-  return match.label;
 }
 
 function cleanUpSingleEmpties(grid: PathGrid, seed: number) {
@@ -514,12 +450,6 @@ function doesCellHaveSegment(cell: PathCell) {
   return cell.left || cell.up || cell.right || cell.down;
 }
 
-function isCellPartiallyFilled(cell: PathCell) {
-  return (
-    [cell.left, cell.up, cell.right, cell.down].filter((b) => b).length === 1
-  );
-}
-
 function getTaxicabDistance(a: Vector2, b: Vector2) {
   return {
     deltaX: Math.abs(a.x - b.x),
@@ -550,42 +480,6 @@ function drawPathFromTo(grid: PathGrid, a: Vector2, b: Vector2) {
   }
   if (safety === 999) {
     console.error("Infinite loop in drawPathFromTo");
-  }
-}
-
-function vectorSum(a: Vector2, b: Vector2) {
-  return {
-    x: a.x + b.x,
-    y: a.y + b.y,
-  };
-}
-
-function areVectorsEqual(a: Vector2, b: Vector2) {
-  return a.x === b.x && a.y === b.y;
-}
-
-function getOrthoDirectionDelta(direction: Direction): Vector2 {
-  switch (direction) {
-    case "left":
-      return {
-        x: -1,
-        y: 0,
-      };
-    case "up":
-      return {
-        x: 0,
-        y: -1,
-      };
-    case "right":
-      return {
-        x: 1,
-        y: 0,
-      };
-    case "down":
-      return {
-        x: 0,
-        y: 1,
-      };
   }
 }
 
