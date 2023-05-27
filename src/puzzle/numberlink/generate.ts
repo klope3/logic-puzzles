@@ -1,12 +1,16 @@
-import { GenerationResult, NumberGrid, Puzzle } from "./types";
 import {
-  debugLog,
-  flatIndexToCoords,
-  puzzleFromNumberGrid,
-  randomSeedNumber,
-} from "./utility.js";
+  Direction,
+  GenerationResult,
+  NumberGrid,
+  PathCell,
+  PathCellNeighbors,
+  PathGrid,
+  Vector2,
+} from "./types";
+import { debugLog, flatIndexToCoords, randomSeedNumber } from "./utility.js";
 import { mulberry32 } from "../../seededRandom.js";
 import { solve } from "./solve.js";
+import { drawPathSegment, getOrthoDirectionFromTo } from "./gridLogic";
 
 export function generate(
   width: number,
@@ -24,12 +28,14 @@ export function generate(
   let failures = 0;
   while (attempts < attemptsMax) {
     debugLog("starting a new grid");
-    const nums = createEmptyNumberGrid(width, height);
-    fillRandomPairs(nums, pairs, seed + seedOffset);
-    const puzzle = puzzleFromNumberGrid(nums);
-    if (solve(puzzle)) {
-      puzzle.seed = seed;
+    const puzzle = createEmptyNumberGrid(width, height);
+    fillRandomPairs(puzzle, pairs, seed + seedOffset);
+    // const puzzle = puzzleFromNumberGrid(nums);
+    const solution = solve(puzzle);
+    if (solution) {
+      // puzzle.seed = seed;
       return {
+        solution,
         puzzle,
         attempts,
         executionMs: Date.now() - startTime,
@@ -42,6 +48,7 @@ export function generate(
   }
 
   return {
+    solution: undefined,
     puzzle: undefined,
     attempts,
     executionMs: Date.now() - startTime,
@@ -72,34 +79,6 @@ function createEmptyNumberGrid(width: number, height: number): NumberGrid {
     Array.from({ length: width }, () => 0)
   );
 }
-
-export type PathCell = {
-  left: boolean;
-  up: boolean;
-  right: boolean;
-  down: boolean;
-  coordinates: Vector2;
-};
-
-export type PathGrid = PathCell[][];
-
-type PathCellNeighbors = {
-  left: PathCell | undefined;
-  up: PathCell | undefined;
-  right: PathCell | undefined;
-  down: PathCell | undefined;
-  downLeft: PathCell | undefined;
-  upLeft: PathCell | undefined;
-  upRight: PathCell | undefined;
-  downRight: PathCell | undefined;
-};
-
-type Vector2 = {
-  x: number;
-  y: number;
-};
-
-type Direction = "left" | "up" | "right" | "down";
 
 export function generateFallback(
   width: number,
@@ -486,6 +465,7 @@ function drawWrappingPath(grid: PathGrid, seed: number, pathNumber: number) {
   return drawn > 0 ? drawn + 1 : 0;
 }
 
+//many of the below functions should be moved to gridLogic
 function findCoordsIn(coords: Vector2, arr: Vector2[]) {
   return !!arr.find((c) => areVectorsEqual(c, coords));
 }
@@ -563,23 +543,6 @@ function drawPathFromTo(grid: PathGrid, a: Vector2, b: Vector2) {
   }
 }
 
-function drawPathSegment(grid: PathGrid, start: Vector2, direction: Direction) {
-  const startCell = grid[start.y][start.x];
-  if (direction === "left") {
-    startCell.left = true;
-    grid[start.y][start.x - 1].right = true;
-  } else if (direction === "up") {
-    startCell.up = true;
-    grid[start.y - 1][start.x].down = true;
-  } else if (direction === "right") {
-    startCell.right = true;
-    grid[start.y][start.x + 1].left = true;
-  } else {
-    startCell.down = true;
-    grid[start.y + 1][start.x].up = true;
-  }
-}
-
 function vectorSum(a: Vector2, b: Vector2) {
   return {
     x: a.x + b.x,
@@ -614,14 +577,6 @@ function getOrthoDirectionDelta(direction: Direction): Vector2 {
         y: 1,
       };
   }
-}
-
-//assumes the two coords are orthogonal to each other!
-function getOrthoDirectionFromTo(start: Vector2, end: Vector2): Direction {
-  if (end.x < start.x) return "left";
-  if (end.x > start.x) return "right";
-  if (end.y < start.y) return "up";
-  return "down";
 }
 
 function neighborsAsArray(neighbors: PathCellNeighbors) {

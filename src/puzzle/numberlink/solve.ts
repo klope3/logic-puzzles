@@ -1,13 +1,24 @@
-import { Coordinates, Path, Puzzle } from "./types";
+import { drawPathSegment, getOrthoDirectionFromTo } from "./gridLogic";
 import {
+  NumberGrid,
+  SolvingPath,
+  Vector2,
+  SolvingData,
+  PathGrid,
+  PathCell,
+  SolvingCell,
+} from "./types";
+import {
+  createEmptyPathGrid,
   debugLog,
   getCoordsString,
   getNeighborCells,
   isInBounds,
 } from "./utility.js";
 
-export function solve(puzzle: Puzzle) {
-  startAllPaths(puzzle);
+export function solve(puzzle: NumberGrid): PathGrid | undefined {
+  const solvingData = createEmptySolvingData(puzzle);
+  startAllPaths(solvingData);
 
   let safety = 0;
   const safetyMax = 99999;
@@ -15,60 +26,97 @@ export function solve(puzzle: Puzzle) {
   while (safety < safetyMax) {
     let deductionsThisPass = 0;
     completePaths = 0;
-    for (const p of puzzle.paths) {
+    for (const p of solvingData.paths) {
       const pathStartCoords = p.cells[0].coordinates;
       const pathEndCoords = p.cells[p.cells.length - 1].coordinates;
       const pathComplete =
         p.cells.length > 1 &&
-        puzzle.unsolved[pathStartCoords.y][pathStartCoords.x] === p.number &&
-        puzzle.unsolved[pathEndCoords.y][pathEndCoords.x] === p.number;
+        solvingData.unsolved[pathStartCoords.y][pathStartCoords.x] ===
+          p.number &&
+        solvingData.unsolved[pathEndCoords.y][pathEndCoords.x] === p.number;
       if (pathComplete) {
         completePaths++;
         continue;
       }
 
-      if (tryNecessaryPathExtension(puzzle, p)) deductionsThisPass++;
+      if (tryNecessaryPathExtension(solvingData, p)) deductionsThisPass++;
     }
     if (deductionsThisPass === 0) break;
     safety++;
   }
   if (safety < safetyMax) {
-    if (completePaths === puzzle.numberPairCount) {
+    if (completePaths === solvingData.numberPairCount) {
       debugLog("SOLVED in " + safety + " passes");
-      return true;
+      return pathGridFromSolvingData(solvingData);
     }
     debugLog("puzzle solving FAILED======================");
-    return false;
+    return undefined;
   } else {
     console.error("Infinite loop!");
-    return false;
+    return undefined;
   }
 }
 
-function startAllPaths(puzzle: Puzzle) {
-  const { cells } = puzzle;
+function pathGridFromSolvingData(solvingData: SolvingData): PathGrid {
+  const width = solvingData.unsolved[0].length;
+  const height = solvingData.unsolved.length;
+  const pathGrid = createEmptyPathGrid(width, height);
+  for (const path of solvingData.paths) {
+    for (let i = 1; i < path.cells.length; i++) {
+      const prevCell = path.cells[i - 1];
+      const curCell = path.cells[i];
+      const cameFromDirection = getOrthoDirectionFromTo(
+        curCell.coordinates,
+        prevCell.coordinates
+      );
+      drawPathSegment(pathGrid, curCell.coordinates, cameFromDirection);
+    }
+  }
+  return pathGrid;
+}
+
+function createEmptySolvingData(puzzle: NumberGrid): SolvingData {
+  const data: SolvingData = {
+    unsolved: puzzle,
+    cells: Array.from({ length: puzzle.length }, (_, y) =>
+      Array.from({ length: puzzle[0].length }, (_, x) => ({
+        coordinates: { x, y },
+        pathParent: undefined,
+      }))
+    ),
+    paths: [],
+    numberPairCount: 0,
+  };
+  return data;
+}
+
+function startAllPaths(solvingData: SolvingData) {
+  const { unsolved, cells, paths } = solvingData;
   for (let y = 0; y < cells.length; y++) {
     for (let x = 0; x < cells[0].length; x++) {
       const coords = cells[y][x].coordinates;
-      const numHere = puzzle.unsolved[coords.y][coords.x];
+      const numHere = unsolved[coords.y][coords.x];
       if (numHere === 0) continue;
       debugLog("starting a path for " + numHere);
-      const path: Path = {
+      const path: SolvingPath = {
         number: numHere,
         cells: [cells[y][x]],
       };
       cells[y][x].pathParent = path;
-      puzzle.paths.push(path);
+      paths.push(path);
     }
   }
 }
 
-function tryNecessaryPathExtension(puzzle: Puzzle, path: Path) {
+function tryNecessaryPathExtension(
+  solvingData: SolvingData,
+  path: SolvingPath
+) {
   const curCell = path.cells[path.cells.length - 1];
   const coords = curCell.coordinates;
-  const { left, top, right, bottom } = getNeighborCells(puzzle, coords);
+  const { left, top, right, bottom } = getNeighborCells(solvingData, coords);
   const { canGoLeft, canGoUp, canGoRight, canGoDown } = getExtensionOptions(
-    puzzle,
+    solvingData,
     path,
     coords
   );
@@ -78,47 +126,52 @@ function tryNecessaryPathExtension(puzzle: Puzzle, path: Path) {
     return false;
   }
   if (left && canGoLeft && !canGoUp && !canGoRight && !canGoDown) {
-    doNecessaryPathExtension(puzzle, path, left.coordinates);
+    doNecessaryPathExtension(solvingData, path, left.coordinates);
     return true;
   }
   if (top && !canGoLeft && canGoUp && !canGoRight && !canGoDown) {
-    doNecessaryPathExtension(puzzle, path, top.coordinates);
+    doNecessaryPathExtension(solvingData, path, top.coordinates);
     return true;
   }
   if (right && !canGoLeft && !canGoUp && canGoRight && !canGoDown) {
-    doNecessaryPathExtension(puzzle, path, right.coordinates);
+    doNecessaryPathExtension(solvingData, path, right.coordinates);
     return true;
   }
   if (bottom && !canGoLeft && !canGoUp && !canGoRight && canGoDown) {
-    doNecessaryPathExtension(puzzle, path, bottom.coordinates);
+    doNecessaryPathExtension(solvingData, path, bottom.coordinates);
     return true;
   }
   return false;
 }
 
 function getExtensionOptions(
-  puzzle: Puzzle,
-  path: Path,
-  coordinates: Coordinates
+  solvingData: SolvingData,
+  path: SolvingPath,
+  coordinates: Vector2
 ) {
-  const { left, top, right, bottom } = getNeighborCells(puzzle, coordinates);
-  const leftNum = getNumberat(left?.coordinates, puzzle);
-  const upNum = getNumberat(top?.coordinates, puzzle);
-  const rightNum = getNumberat(right?.coordinates, puzzle);
-  const downNum = getNumberat(bottom?.coordinates, puzzle);
+  const { left, top, right, bottom } = getNeighborCells(
+    solvingData,
+    coordinates
+  );
+  const leftNum = getNumberat(left?.coordinates, solvingData);
+  const upNum = getNumberat(top?.coordinates, solvingData);
+  const rightNum = getNumberat(right?.coordinates, solvingData);
+  const downNum = getNumberat(bottom?.coordinates, solvingData);
 
   const cameFromLeft =
     left &&
-    puzzle.cells[left.coordinates.y][left.coordinates.x].pathParent === path;
+    solvingData.cells[left.coordinates.y][left.coordinates.x].pathParent ===
+      path;
   const cameFromTop =
     top &&
-    puzzle.cells[top.coordinates.y][top.coordinates.x].pathParent === path;
+    solvingData.cells[top.coordinates.y][top.coordinates.x].pathParent === path;
   const cameFromRight =
     right &&
-    puzzle.cells[right.coordinates.y][right.coordinates.x].pathParent === path;
+    solvingData.cells[right.coordinates.y][right.coordinates.x].pathParent ===
+      path;
   const cameFromBottom =
     bottom &&
-    puzzle.cells[bottom.coordinates.y][bottom.coordinates.x].pathParent ===
+    solvingData.cells[bottom.coordinates.y][bottom.coordinates.x].pathParent ===
       path;
 
   return {
@@ -137,9 +190,9 @@ function getExtensionOptions(
 }
 
 function doNecessaryPathExtension(
-  puzzle: Puzzle,
-  path: Path,
-  coordsToAdd: Coordinates
+  solvingData: SolvingData,
+  path: SolvingPath,
+  coordsToAdd: Vector2
 ) {
   debugLog(
     "Path " +
@@ -147,23 +200,27 @@ function doNecessaryPathExtension(
       " forced to extend to " +
       getCoordsString(coordsToAdd)
   );
-  if (puzzle.cells[coordsToAdd.y][coordsToAdd.x].pathParent) {
+  if (solvingData.cells[coordsToAdd.y][coordsToAdd.x].pathParent) {
     debugLog(
       "merging path " +
         path.number +
         " with path " +
-        puzzle.cells[coordsToAdd.y][coordsToAdd.x].pathParent?.number
+        solvingData.cells[coordsToAdd.y][coordsToAdd.x].pathParent?.number
     );
-    mergePathsAt(puzzle, path, coordsToAdd);
+    mergePathsAt(solvingData, path, coordsToAdd);
   } else {
-    path.cells.push(puzzle.cells[coordsToAdd.y][coordsToAdd.x]);
-    puzzle.cells[coordsToAdd.y][coordsToAdd.x].pathParent = path;
+    path.cells.push(solvingData.cells[coordsToAdd.y][coordsToAdd.x]);
+    solvingData.cells[coordsToAdd.y][coordsToAdd.x].pathParent = path;
   }
 }
 
-function mergePathsAt(puzzle: Puzzle, path: Path, coordinates: Coordinates) {
-  const targetCell = puzzle.cells[coordinates.y][coordinates.x];
-  const targetPath = targetCell.pathParent as Path; //this should ALWAYS be defined if we call this function
+function mergePathsAt(
+  solvingData: SolvingData,
+  path: SolvingPath,
+  coordinates: Vector2
+) {
+  const targetCell = solvingData.cells[coordinates.y][coordinates.x];
+  const targetPath = targetCell.pathParent as SolvingPath; //this should ALWAYS be defined if we call this function
   const targetIsLastInPath =
     targetPath.cells[targetPath.cells.length - 1] === targetCell;
   if (targetIsLastInPath) targetPath.cells.reverse();
@@ -171,15 +228,21 @@ function mergePathsAt(puzzle: Puzzle, path: Path, coordinates: Coordinates) {
     c.pathParent = path;
   }
   path.cells.push(...targetPath.cells);
-  puzzle.paths.splice(puzzle.paths.indexOf(targetPath), 1);
+  solvingData.paths.splice(solvingData.paths.indexOf(targetPath), 1);
 }
 
-function getNumberat(coordinates: Coordinates | undefined, puzzle: Puzzle) {
-  if (coordinates === undefined || !isInBounds(coordinates, puzzle))
+function getNumberat(
+  coordinates: Vector2 | undefined,
+  solvingData: SolvingData
+) {
+  if (
+    coordinates === undefined ||
+    !isInBounds(coordinates, solvingData.unsolved)
+  )
     return undefined;
 
-  const pathHere = puzzle.cells[coordinates.y][coordinates.x].pathParent;
+  const pathHere = solvingData.cells[coordinates.y][coordinates.x].pathParent;
   if (pathHere) return pathHere.number;
-  const writtenNumber = puzzle.unsolved[coordinates.y][coordinates.x];
+  const writtenNumber = solvingData.unsolved[coordinates.y][coordinates.x];
   return writtenNumber ? writtenNumber : undefined;
 }

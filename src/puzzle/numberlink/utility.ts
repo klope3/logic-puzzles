@@ -1,61 +1,74 @@
 import { mulberry32 } from "../../seededRandom.js";
 import {
-  Cell,
-  Coordinates,
+  SolvingCell,
+  Vector2,
   DirectionSet,
   NumberGrid,
-  Path,
-  Puzzle,
+  SolvingPath,
+  // Puzzle,
+  PathGrid,
+  SolvingData,
 } from "./types.js";
 
 const verbose = false;
 
-export function puzzleFromNumberGrid(grid: NumberGrid) {
-  const puzzle: Puzzle = {
-    unsolved: grid,
-    cells: Array.from({ length: grid.length }, (_) => []),
-    paths: [],
-    numberPairCount: 0,
-    seed: undefined,
-  };
-  const numbers = new Set<number>();
-  for (let y = 0; y < grid.length; y++) {
-    for (let x = 0; x < grid[0].length; x++) {
-      if (grid[y][x] > 0) numbers.add(grid[y][x]);
-      puzzle.cells[y][x] = {
-        coordinates: { x, y },
-        pathParent: undefined,
-      };
-    }
-  }
-  puzzle.numberPairCount = numbers.size;
-  return puzzle;
-}
+// export function puzzleFromNumberGrid(grid: NumberGrid) {
+//   const puzzle: Puzzle = {
+//     unsolved: grid,
+//     cells: Array.from({ length: grid.length }, (_) => []),
+//     paths: [],
+//     numberPairCount: 0,
+//     seed: undefined,
+//   };
+//   const numbers = new Set<number>();
+//   for (let y = 0; y < grid.length; y++) {
+//     for (let x = 0; x < grid[0].length; x++) {
+//       if (grid[y][x] > 0) numbers.add(grid[y][x]);
+//       puzzle.cells[y][x] = {
+//         coordinates: { x, y },
+//         pathParent: undefined,
+//       };
+//     }
+//   }
+//   puzzle.numberPairCount = numbers.size;
+//   return puzzle;
+// }
 
-export function getNeighborCells(puzzle: Puzzle, centerCoords: Coordinates) {
+export function getNeighborCells(
+  solvingData: SolvingData,
+  centerCoords: Vector2
+) {
   const l = { x: centerCoords.x - 1, y: centerCoords.y };
   const u = { x: centerCoords.x, y: centerCoords.y - 1 };
   const r = { x: centerCoords.x + 1, y: centerCoords.y };
   const d = { x: centerCoords.x, y: centerCoords.y + 1 };
 
   return {
-    left: isInBounds(l, puzzle) ? puzzle.cells[l.y][l.x] : undefined,
-    top: isInBounds(u, puzzle) ? puzzle.cells[u.y][u.x] : undefined,
-    right: isInBounds(r, puzzle) ? puzzle.cells[r.y][r.x] : undefined,
-    bottom: isInBounds(d, puzzle) ? puzzle.cells[d.y][d.x] : undefined,
+    left: isInBounds(l, solvingData.unsolved)
+      ? solvingData.cells[l.y][l.x]
+      : undefined,
+    top: isInBounds(u, solvingData.unsolved)
+      ? solvingData.cells[u.y][u.x]
+      : undefined,
+    right: isInBounds(r, solvingData.unsolved)
+      ? solvingData.cells[r.y][r.x]
+      : undefined,
+    bottom: isInBounds(d, solvingData.unsolved)
+      ? solvingData.cells[d.y][d.x]
+      : undefined,
   };
 }
 
-export function isInBounds(coordinates: Coordinates, puzzle: Puzzle) {
+export function isInBounds(coordinates: Vector2, grid: NumberGrid) {
   return (
     coordinates.x >= 0 &&
     coordinates.y >= 0 &&
-    coordinates.x < puzzle.cells[0].length &&
-    coordinates.y < puzzle.cells.length
+    coordinates.x < grid[0].length &&
+    coordinates.y < grid.length
   );
 }
 
-function getCellVisual(cell: Cell): string {
+function getCellVisual(cell: SolvingCell): string {
   if (!cell.pathParent || cell.pathParent.cells.length === 0) return ". ";
 
   const { cells: pathCells } = cell.pathParent;
@@ -72,9 +85,9 @@ function getCellVisual(cell: Cell): string {
 }
 
 function chooseCellVisual(
-  targetCoords: Coordinates,
-  prevCoords: Coordinates,
-  nextCoords: Coordinates
+  targetCoords: Vector2,
+  prevCoords: Vector2,
+  nextCoords: Vector2
 ) {
   const left =
     prevCoords.x === targetCoords.x - 1 || nextCoords.x === targetCoords.x - 1;
@@ -95,12 +108,12 @@ function chooseCellVisual(
   return "? ";
 }
 
-export function getCoordsString(coordinates: Coordinates) {
+export function getCoordsString(coordinates: Vector2) {
   return `(${coordinates.x}, ${coordinates.y})`;
 }
 
-export function printPuzzle(puzzle: Puzzle) {
-  const { unsolved, cells } = puzzle;
+export function printSolvingData(solvingData: SolvingData) {
+  const { unsolved, cells } = solvingData;
   let full = "";
   for (let y = 0; y < unsolved.length; y++) {
     let row = "";
@@ -118,25 +131,27 @@ export function printPuzzle(puzzle: Puzzle) {
   console.log(full);
 }
 
-export function testPathInPuzzle(
-  puzzle: Puzzle,
-  pathNumber: number,
-  coordinatesArray: Coordinates[]
-) {
-  const path: Path = {
-    cells: [],
-    number: pathNumber,
-  };
-  for (const c of coordinatesArray) {
-    path.cells.push(puzzle.cells[c.y][c.x]);
-    puzzle.cells[c.y][c.x].pathParent = path;
-  }
-  puzzle.paths.push(path);
-}
+// export function testPathInPuzzle(
+//   puzzle: Puzzle,
+//   pathNumber: number,
+//   coordinatesArray: Vector2[]
+// ) {
+//   const path: SolvingPath = {
+//     cells: [],
+//     number: pathNumber,
+//   };
+//   for (const c of coordinatesArray) {
+//     path.cells.push(puzzle.cells[c.y][c.x]);
+//     puzzle.cells[c.y][c.x].pathParent = path;
+//   }
+//   puzzle.paths.push(path);
+// }
 
 //this function could be adapted to support grid printing in console
-export function puzzleToDirectionGrid(puzzle: Puzzle): DirectionSet[][] {
-  const { cells } = puzzle;
+export function puzzleToDirectionGrid(
+  solvingData: SolvingData
+): DirectionSet[][] {
+  const { cells } = solvingData;
   const directionGrid: DirectionSet[][] = Array.from(
     { length: cells.length },
     (_) =>
@@ -193,6 +208,19 @@ export function createEmptyDirectionGrid(
       down: false,
     }))
   );
+}
+
+export function createEmptyPathGrid(width: number, height: number): PathGrid {
+  const grid: PathGrid = Array.from({ length: height }, (_, y) =>
+    Array.from({ length: width }, (_, x) => ({
+      left: false,
+      up: false,
+      right: false,
+      down: false,
+      coordinates: { x, y },
+    }))
+  );
+  return grid;
 }
 
 export function debugLog(message: string) {

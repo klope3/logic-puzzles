@@ -1,26 +1,22 @@
 import { Grid } from "./Grid";
-import { easy1 } from "../../puzzle/numberlink/puzzles";
 import {
-  createEmptyDirectionGrid,
+  createEmptyPathGrid,
   flatIndexToCoords,
-  puzzleFromNumberGrid,
-  puzzleToDirectionGrid,
 } from "../../puzzle/numberlink/utility";
-import { solve } from "../../puzzle/numberlink/solve";
 import { useEffect, useState } from "react";
-import { DirectionSet, Puzzle } from "../../puzzle/numberlink/types";
+import { NumberGrid, PathGrid } from "../../puzzle/numberlink/types";
 import { generate } from "../../puzzle/numberlink/generate";
 
 export function Numberlink() {
-  const [puzzle, setPuzzle] = useState({} as Puzzle);
-  const [solutionGrid, setSolutionGrid] = useState([] as DirectionSet[][]);
-  const [directionGridState, setDirectionGridState] = useState(
-    [] as DirectionSet[][]
-  );
+  const [puzzle, setPuzzle] = useState([] as NumberGrid);
+  const [solutionGrid, setSolutionGrid] = useState([] as PathGrid);
   const [isSolved, setIsSolved] = useState(false);
   const [generateWidth, setGenerateWidth] = useState(5);
   const [generateHeight, setGenerateHeight] = useState(5);
   const [generateSeed, setGenerateSeed] = useState(0);
+  const [pathGridState, setPathGridState] = useState(
+    createEmptyPathGrid(generateWidth, generateHeight)
+  );
 
   useEffect(() => {
     // const puzzle = generate(5, 5);
@@ -43,19 +39,18 @@ export function Numberlink() {
       return;
     }
 
-    setSolutionGrid(puzzleToDirectionGrid(result.puzzle));
-    const cleaned = puzzleFromNumberGrid(result.puzzle.unsolved);
-    setPuzzle(cleaned);
-    setDirectionGridState(
-      createEmptyDirectionGrid(generateWidth, generateHeight)
-    );
+    // setSolutionGrid(puzzleToDirectionGrid(result.puzzle));
+    // const cleaned = puzzleFromNumberGrid(result.puzzle.unsolved);
+    setPuzzle(result.puzzle);
+    setPathGridState(createEmptyPathGrid(generateWidth, generateHeight));
     setIsSolved(false);
   }
 
   function checkSolved() {
+    return; //refactor later
     for (let y = 0; y < solutionGrid.length; y++) {
       for (let x = 0; x < solutionGrid[0].length; x++) {
-        const current = directionGridState[y][x];
+        const current = pathGridState[y][x];
         const correct = solutionGrid[y][x];
         if (
           current.down !== correct.down ||
@@ -83,30 +78,30 @@ export function Numberlink() {
     const source = +clicked.dataset.clickzonesource;
     const direction = clicked.dataset.clickzonedirection as "right" | "down";
     const sourceCoords = flatIndexToCoords(source, 5);
-    const newDirectionGrid = [...directionGridState];
+    const newPathGrid = [...pathGridState];
     if (direction == "right") {
-      newDirectionGrid[sourceCoords.y][sourceCoords.x].right =
-        !newDirectionGrid[sourceCoords.y][sourceCoords.x].right;
-      newDirectionGrid[sourceCoords.y][sourceCoords.x + 1].left =
-        !newDirectionGrid[sourceCoords.y][sourceCoords.x + 1].left;
+      newPathGrid[sourceCoords.y][sourceCoords.x].right =
+        !newPathGrid[sourceCoords.y][sourceCoords.x].right;
+      newPathGrid[sourceCoords.y][sourceCoords.x + 1].left =
+        !newPathGrid[sourceCoords.y][sourceCoords.x + 1].left;
     } else {
-      newDirectionGrid[sourceCoords.y][sourceCoords.x].down =
-        !newDirectionGrid[sourceCoords.y][sourceCoords.x].down;
-      newDirectionGrid[sourceCoords.y + 1][sourceCoords.x].up =
-        !newDirectionGrid[sourceCoords.y + 1][sourceCoords.x].up;
+      newPathGrid[sourceCoords.y][sourceCoords.x].down =
+        !newPathGrid[sourceCoords.y][sourceCoords.x].down;
+      newPathGrid[sourceCoords.y + 1][sourceCoords.x].up =
+        !newPathGrid[sourceCoords.y + 1][sourceCoords.x].up;
     }
 
-    setDirectionGridState(newDirectionGrid);
+    setPathGridState(newPathGrid);
     checkSolved();
   }
 
   return (
     <>
-      {puzzle.unsolved !== undefined && (
+      {puzzle.length > 0 && (
         <Grid
           puzzle={puzzle}
           clickFunction={clickGrid}
-          directionGridState={directionGridState}
+          pathGrid={pathGridState}
         />
       )}
       {isSolved && <div>Solved!</div>}
@@ -149,7 +144,7 @@ export function Numberlink() {
       </button>
       <button
         onClick={() => {
-          setDirectionGridState(solutionGrid);
+          setPathGridState(solutionGrid);
           setIsSolved(true);
         }}
       >
@@ -157,10 +152,8 @@ export function Numberlink() {
       </button>
       <button
         onClick={() => {
-          setDirectionGridState(
-            createEmptyDirectionGrid(generateWidth, generateHeight)
-          );
-          setPuzzle(puzzleFromNumberGrid(puzzle.unsolved));
+          setPathGridState(createEmptyPathGrid(generateWidth, generateHeight));
+          // setPuzzle(puzzleFromNumberGrid(puzzle.unsolved));
           setIsSolved(false);
         }}
       >
