@@ -3,6 +3,7 @@ import { CellState, black, empty, white } from "../../puzzle/tohu/types";
 import { Grid } from "./Grid";
 import { generatePuzzle } from "../../puzzle/tohu/generate";
 import { indexToCoords } from "../../puzzle/tohu/utility";
+import { PuzzleControls } from "../common/PuzzleControls";
 
 const initialPuzzle = generatePuzzle(6, 6, 0);
 
@@ -57,57 +58,25 @@ export function TohuWaVohu() {
         clickFunction={clickCell}
       />
       {isSolved && <div>Solved!</div>}
-      <div>
-        <button onClick={() => setPuzzleState(puzzle.states)}>Reset</button>
-      </div>
-      <div>
-        <button
-          onClick={() => {
-            const newPuzzle = generatePuzzle(newWidth, newHeight, newSeed);
-            setPuzzle(newPuzzle);
-            setPuzzleState(newPuzzle.states);
-            setIsSolved(false);
-          }}
-        >
-          Generate
-        </button>
-      </div>
-      <div>
-        <label htmlFor="seed">
-          Seed:
-          <input
-            type="number"
-            name="seed"
-            id="seed"
-            value={newSeed}
-            onChange={(e) => setNewSeed(+e.target.value)}
-          />
-        </label>
-      </div>
-      <div>
-        <label htmlFor="width">
-          Width:
-          <input
-            type="number"
-            name="width"
-            id="width"
-            value={newWidth}
-            onChange={(e) => setNewWidth(+e.target.value)}
-          />
-        </label>
-      </div>
-      <div>
-        <label htmlFor="height">
-          Height:
-          <input
-            type="number"
-            name="height"
-            id="height"
-            value={newHeight}
-            onChange={(e) => setNewHeight(+e.target.value)}
-          />
-        </label>
-      </div>
+      <PuzzleControls
+        minWidth={4}
+        minHeight={4}
+        onChangeWidth={setNewWidth}
+        onChangeHeight={setNewHeight}
+        onChangeSeed={setNewSeed}
+        onClickGenerate={() => {
+          const newPuzzle = generatePuzzle(newWidth, newHeight, newSeed);
+          setPuzzle(newPuzzle);
+          setPuzzleState(newPuzzle.states);
+          setIsSolved(false);
+        }}
+        onClickReset={() => {
+          setPuzzleState(puzzle.states);
+        }}
+        onClickSolve={() => {
+          setPuzzleState(puzzle.solution);
+        }}
+      />
     </div>
   );
 }

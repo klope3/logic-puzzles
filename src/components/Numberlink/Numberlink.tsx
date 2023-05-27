@@ -9,9 +9,9 @@ import { generate } from "../../puzzle/numberlink/generate";
 import {
   areVectorsEqual,
   followPathToEnd,
-  isCellEmpty,
   isCellPartiallyFilled,
 } from "../../puzzle/numberlink/gridLogic";
+import { PuzzleControls } from "../common/PuzzleControls";
 
 const initialWidth = 5;
 const initialHeight = 5;
@@ -28,12 +28,6 @@ export function Numberlink() {
   );
 
   useEffect(() => {
-    // const puzzle = generate(5, 5);
-    // if (!puzzle) return;
-
-    // setSolutionGrid(puzzleToDirectionGrid(puzzle));
-    // const cleaned = puzzleFromNumberGrid(puzzle.unsolved);
-    // setPuzzle(cleaned);
     generatePuzzle();
   }, []);
 
@@ -48,8 +42,6 @@ export function Numberlink() {
       return;
     }
 
-    // setSolutionGrid(puzzleToDirectionGrid(result.puzzle));
-    // const cleaned = puzzleFromNumberGrid(result.puzzle.unsolved);
     setPuzzle(result.puzzle);
     setSolutionGrid(result.solution);
     setPathGridState(createEmptyPathGrid(generateWidth, generateHeight));
@@ -58,15 +50,12 @@ export function Numberlink() {
 
   function checkSolved() {
     const pathsToFind = new Set([...puzzle.flat().filter((a) => a !== 0)]);
-    console.log("paths to find:");
-    console.log(pathsToFind);
     const completePathsFound: number[] = [];
     for (let y = 0; y < puzzle.length; y++) {
       for (let x = 0; x < puzzle[0].length; x++) {
         if (puzzle[y][x] === 0 || completePathsFound.includes(puzzle[y][x]))
           continue;
         if (!isCellPartiallyFilled(pathGridState[y][x])) return;
-        console.log("Starting at " + puzzle[y][x]);
         const path = followPathToEnd(pathGridState, { x, y });
         if (path.length < 2) continue;
         const start = path[0];
@@ -123,60 +112,24 @@ export function Numberlink() {
         />
       )}
       {isSolved && <div>Solved!</div>}
-      <label htmlFor="width">
-        Width:
-        <input
-          type="number"
-          name="width"
-          id="width"
-          min={5}
-          onChange={(e) => setGenerateWidth(+e.target.value)}
-        />
-      </label>
-      <label htmlFor="height">
-        Height:
-        <input
-          type="number"
-          name="height"
-          id="height"
-          min={5}
-          onChange={(e) => setGenerateHeight(+e.target.value)}
-        />
-      </label>
-      <label htmlFor="seed">
-        Seed:
-        <input
-          type="number"
-          name="seed"
-          id="seed"
-          min={0}
-          onChange={(e) => setGenerateSeed(+e.target.value)}
-        />
-      </label>
-      <button
-        onClick={() =>
+      <PuzzleControls
+        minWidth={5}
+        minHeight={5}
+        onChangeWidth={setGenerateWidth}
+        onChangeHeight={setGenerateHeight}
+        onChangeSeed={setGenerateSeed}
+        onClickGenerate={() =>
           generatePuzzle(generateWidth, generateHeight, generateSeed)
         }
-      >
-        Generate
-      </button>
-      <button
-        onClick={() => {
+        onClickSolve={() => {
           setPathGridState(solutionGrid);
           setIsSolved(true);
         }}
-      >
-        Solve
-      </button>
-      <button
-        onClick={() => {
+        onClickReset={() => {
           setPathGridState(createEmptyPathGrid(generateWidth, generateHeight));
-          // setPuzzle(puzzleFromNumberGrid(puzzle.unsolved));
           setIsSolved(false);
         }}
-      >
-        Reset
-      </button>
+      />
     </>
   );
 }
