@@ -24,14 +24,20 @@ export function generate(
   const attemptsMax = 999999;
   let seedOffset = 0;
   if (pairs === undefined) pairs = 5;
-  const startTime = Date.now();
+  let elapsedTime = 0;
   let failures = 0;
   while (attempts < attemptsMax) {
+    if (elapsedTime > 5000) {
+      console.log("Fallback");
+      return generateFallback(width, height, seed);
+    }
+    const startTime = Date.now();
     debugLog("starting a new grid");
     const puzzle = createEmptyNumberGrid(width, height);
     fillRandomPairs(puzzle, pairs, seed + seedOffset);
     // const puzzle = puzzleFromNumberGrid(nums);
     const solution = solve(puzzle);
+    elapsedTime += Date.now() - startTime;
     if (solution) {
       // puzzle.seed = seed;
       return {
@@ -47,11 +53,12 @@ export function generate(
     failures++;
   }
 
+  console.error("Failed to generate any puzzle!");
   return {
     solution: undefined,
     puzzle: undefined,
     attempts,
-    executionMs: Date.now() - startTime,
+    executionMs: elapsedTime,
   };
 }
 
@@ -80,11 +87,11 @@ function createEmptyNumberGrid(width: number, height: number): NumberGrid {
   );
 }
 
-export function generateFallback(
+function generateFallback(
   width: number,
   height: number,
   seed: number
-): PathGrid {
+): GenerationResult {
   const grid: PathGrid = Array.from({ length: height }, (_, y) =>
     Array.from({ length: width }, (_, x) => ({
       left: false,
@@ -128,9 +135,12 @@ export function generateFallback(
   }
   cleanUpSingleEmpties(grid, seed);
   cleanUpShortPaths(grid, seed);
-  const numberGrid = extractNumberGrid(grid);
-
-  return grid;
+  return {
+    puzzle: extractNumberGrid(grid),
+    solution: grid,
+    attempts: 1,
+    executionMs: 0,
+  };
 }
 
 function extractNumberGrid(grid: PathGrid): NumberGrid {

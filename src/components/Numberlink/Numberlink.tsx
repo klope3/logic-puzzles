@@ -7,12 +7,15 @@ import { useEffect, useState } from "react";
 import { NumberGrid, PathGrid } from "../../puzzle/numberlink/types";
 import { generate } from "../../puzzle/numberlink/generate";
 
+const initialWidth = 5;
+const initialHeight = 5;
+
 export function Numberlink() {
   const [puzzle, setPuzzle] = useState([] as NumberGrid);
   const [solutionGrid, setSolutionGrid] = useState([] as PathGrid);
   const [isSolved, setIsSolved] = useState(false);
-  const [generateWidth, setGenerateWidth] = useState(5);
-  const [generateHeight, setGenerateHeight] = useState(5);
+  const [generateWidth, setGenerateWidth] = useState(initialWidth);
+  const [generateHeight, setGenerateHeight] = useState(initialHeight);
   const [generateSeed, setGenerateSeed] = useState(0);
   const [pathGridState, setPathGridState] = useState(
     createEmptyPathGrid(generateWidth, generateHeight)
@@ -78,7 +81,7 @@ export function Numberlink() {
 
     const source = +clicked.dataset.clickzonesource;
     const direction = clicked.dataset.clickzonedirection as "right" | "down";
-    const sourceCoords = flatIndexToCoords(source, 5);
+    const sourceCoords = flatIndexToCoords(source, generateWidth);
     const newPathGrid = [...pathGridState];
     if (direction == "right") {
       newPathGrid[sourceCoords.y][sourceCoords.x].right =
