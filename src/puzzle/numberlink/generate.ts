@@ -31,12 +31,14 @@ export function generate(
   let attempts = 0;
   const attemptsMax = 999999;
   let seedOffset = 0;
-  if (pairs === undefined) pairs = 5;
+  if (pairs === undefined) pairs = width < height ? width : height;
   let elapsedTime = 0;
   let failures = 0;
   while (attempts < attemptsMax) {
     if (elapsedTime > 5000) {
-      console.log("Fallback");
+      console.log(
+        "Fallback to alternate generation after " + failures + " failures"
+      );
       return generateFallback(width, height, seed);
     }
     const startTime = Date.now();
@@ -61,6 +63,7 @@ export function generate(
     failures++;
   }
 
+  //we should never reach this point!!
   console.error("Failed to generate any puzzle!");
   return {
     solution: undefined,
