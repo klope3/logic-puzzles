@@ -3,6 +3,7 @@ import { CellState, black, empty, white } from "../../puzzle/tohu/types";
 import { Grid } from "./Grid";
 import { generatePuzzle } from "../../puzzle/tohu/generate";
 import { indexToCoords } from "../../puzzle/tohu/utility";
+import { PuzzleControls } from "../common/PuzzleControls";
 
 const initialPuzzle = generatePuzzle(6, 6, 0);
 
@@ -50,64 +51,42 @@ export function TohuWaVohu() {
 
   return (
     <div>
-      <div>Tohu</div>
       <Grid
         puzzleOriginal={puzzle.states}
         puzzleState={puzzleState}
         clickFunction={clickCell}
       />
-      {isSolved && <div>Solved!</div>}
-      <div>
-        <button onClick={() => setPuzzleState(puzzle.states)}>Reset</button>
-      </div>
-      <div>
-        <button
-          onClick={() => {
-            const newPuzzle = generatePuzzle(newWidth, newHeight, newSeed);
-            setPuzzle(newPuzzle);
-            setPuzzleState(newPuzzle.states);
-            setIsSolved(false);
-          }}
-        >
-          Generate
-        </button>
-      </div>
-      <div>
-        <label htmlFor="seed">
-          Seed:
-          <input
-            type="number"
-            name="seed"
-            id="seed"
-            value={newSeed}
-            onChange={(e) => setNewSeed(+e.target.value)}
-          />
-        </label>
-      </div>
-      <div>
-        <label htmlFor="width">
-          Width:
-          <input
-            type="number"
-            name="width"
-            id="width"
-            value={newWidth}
-            onChange={(e) => setNewWidth(+e.target.value)}
-          />
-        </label>
-      </div>
-      <div>
-        <label htmlFor="height">
-          Height:
-          <input
-            type="number"
-            name="height"
-            id="height"
-            value={newHeight}
-            onChange={(e) => setNewHeight(+e.target.value)}
-          />
-        </label>
-      </div>
+      {isSolved && <div className="solved">Solved!</div>}
+      <PuzzleControls
+        minWidth={4}
+        minHeight={4}
+        onChangeWidth={setNewWidth}
+        onChangeHeight={setNewHeight}
+        onChangeSeed={setNewSeed}
+        showGenerationWarning={false}
+        onClickGenerate={() => {
+          const newPuzzle = generatePuzzle(newWidth, newHeight, newSeed);
+          setPuzzle(newPuzzle);
+          setPuzzleState(newPuzzle.states);
+          setIsSolved(false);
+        }}
+        onClickReset={() => {
+          setPuzzleState(puzzle.states);
+          setIsSolved(false);
+        }}
+        onClickSolve={() => {
+          setPuzzleState(puzzle.solution);
+          setIsSolved(true);
+        }}
+      />
+      <details>
+        <summary>How to Play</summary>
+        <p>
+          Fill the grid with black and white. No more than 2 white or 2 black in
+          a row. Each row and column must have the same number of whites and
+          blacks. (2 blacks and 2 whites, 3 blacks and 3 whites, etc.)
+        </p>
+      </details>
     </div>
   );
 }

@@ -1,34 +1,34 @@
 import { Grid } from "./Grid";
-import { easy1 } from "../../puzzle/numberlink/puzzles";
 import {
-  createEmptyDirectionGrid,
+  createEmptyPathGrid,
   flatIndexToCoords,
-  puzzleFromNumberGrid,
-  puzzleToDirectionGrid,
 } from "../../puzzle/numberlink/utility";
-import { solve } from "../../puzzle/numberlink/solve";
 import { useEffect, useState } from "react";
-import { DirectionSet, Puzzle } from "../../puzzle/numberlink/types";
+import { NumberGrid, PathGrid } from "../../puzzle/numberlink/types";
 import { generate } from "../../puzzle/numberlink/generate";
+import {
+  areVectorsEqual,
+  followPathToEnd,
+  isCellPartiallyFilled,
+} from "../../puzzle/numberlink/gridLogic";
+import { PuzzleControls } from "../common/PuzzleControls";
+import { Link } from "react-router-dom";
+
+const initialWidth = 5;
+const initialHeight = 5;
 
 export function Numberlink() {
-  const [puzzle, setPuzzle] = useState({} as Puzzle);
-  const [solutionGrid, setSolutionGrid] = useState([] as DirectionSet[][]);
-  const [directionGridState, setDirectionGridState] = useState(
-    [] as DirectionSet[][]
-  );
+  const [puzzle, setPuzzle] = useState([] as NumberGrid);
+  const [solutionGrid, setSolutionGrid] = useState([] as PathGrid);
   const [isSolved, setIsSolved] = useState(false);
-  const [generateWidth, setGenerateWidth] = useState(5);
-  const [generateHeight, setGenerateHeight] = useState(5);
+  const [generateWidth, setGenerateWidth] = useState(initialWidth);
+  const [generateHeight, setGenerateHeight] = useState(initialHeight);
   const [generateSeed, setGenerateSeed] = useState(0);
+  const [pathGridState, setPathGridState] = useState(
+    createEmptyPathGrid(generateWidth, generateHeight)
+  );
 
   useEffect(() => {
-    // const puzzle = generate(5, 5);
-    // if (!puzzle) return;
-
-    // setSolutionGrid(puzzleToDirectionGrid(puzzle));
-    // const cleaned = puzzleFromNumberGrid(puzzle.unsolved);
-    // setPuzzle(cleaned);
     generatePuzzle();
   }, []);
 
@@ -37,37 +37,40 @@ export function Numberlink() {
     height: number = 5,
     seed?: number
   ) {
-    const puzzle = generate(width, height, seed);
-    if (!puzzle) {
+    const result = generate(width, height, seed);
+    if (!result.puzzle || !result.solution) {
       console.error("Generation failed!");
       return;
     }
 
-    setSolutionGrid(puzzleToDirectionGrid(puzzle));
-    const cleaned = puzzleFromNumberGrid(puzzle.unsolved);
-    setPuzzle(cleaned);
-    setDirectionGridState(
-      createEmptyDirectionGrid(generateWidth, generateHeight)
-    );
+    setPuzzle(result.puzzle);
+    setSolutionGrid(result.solution);
+    setPathGridState(createEmptyPathGrid(generateWidth, generateHeight));
     setIsSolved(false);
   }
 
   function checkSolved() {
-    for (let y = 0; y < solutionGrid.length; y++) {
-      for (let x = 0; x < solutionGrid[0].length; x++) {
-        const current = directionGridState[y][x];
-        const correct = solutionGrid[y][x];
+    const pathsToFind = new Set([...puzzle.flat().filter((a) => a !== 0)]);
+    const completePathsFound: number[] = [];
+    for (let y = 0; y < puzzle.length; y++) {
+      for (let x = 0; x < puzzle[0].length; x++) {
+        if (puzzle[y][x] === 0 || completePathsFound.includes(puzzle[y][x]))
+          continue;
+        if (!isCellPartiallyFilled(pathGridState[y][x])) return;
+        const path = followPathToEnd(pathGridState, { x, y });
+        if (path.length < 2) continue;
+        const start = path[0];
+        const end = path[path.length - 1];
         if (
-          current.down !== correct.down ||
-          current.up !== correct.up ||
-          current.right !== correct.right ||
-          current.down !== correct.down
+          !areVectorsEqual(start, end) &&
+          puzzle[start.y][start.x] === puzzle[end.y][end.x]
         ) {
-          return;
-        }
+          completePathsFound.push(puzzle[start.y][start.x]);
+          continue;
+        } else return;
       }
     }
-    setIsSolved(true);
+    if (completePathsFound.length === pathsToFind.size) setIsSolved(true);
   }
 
   function clickGrid(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
@@ -82,90 +85,60 @@ export function Numberlink() {
 
     const source = +clicked.dataset.clickzonesource;
     const direction = clicked.dataset.clickzonedirection as "right" | "down";
-    const sourceCoords = flatIndexToCoords(source, 5);
-    const newDirectionGrid = [...directionGridState];
+    const sourceCoords = flatIndexToCoords(source, generateWidth);
+    const newPathGrid = [...pathGridState];
     if (direction == "right") {
-      newDirectionGrid[sourceCoords.y][sourceCoords.x].right =
-        !newDirectionGrid[sourceCoords.y][sourceCoords.x].right;
-      newDirectionGrid[sourceCoords.y][sourceCoords.x + 1].left =
-        !newDirectionGrid[sourceCoords.y][sourceCoords.x + 1].left;
+      newPathGrid[sourceCoords.y][sourceCoords.x].right =
+        !newPathGrid[sourceCoords.y][sourceCoords.x].right;
+      newPathGrid[sourceCoords.y][sourceCoords.x + 1].left =
+        !newPathGrid[sourceCoords.y][sourceCoords.x + 1].left;
     } else {
-      newDirectionGrid[sourceCoords.y][sourceCoords.x].down =
-        !newDirectionGrid[sourceCoords.y][sourceCoords.x].down;
-      newDirectionGrid[sourceCoords.y + 1][sourceCoords.x].up =
-        !newDirectionGrid[sourceCoords.y + 1][sourceCoords.x].up;
+      newPathGrid[sourceCoords.y][sourceCoords.x].down =
+        !newPathGrid[sourceCoords.y][sourceCoords.x].down;
+      newPathGrid[sourceCoords.y + 1][sourceCoords.x].up =
+        !newPathGrid[sourceCoords.y + 1][sourceCoords.x].up;
     }
 
-    setDirectionGridState(newDirectionGrid);
+    setPathGridState(newPathGrid);
     checkSolved();
   }
 
   return (
     <>
-      {puzzle.unsolved !== undefined && (
+      {puzzle.length > 0 && (
         <Grid
           puzzle={puzzle}
           clickFunction={clickGrid}
-          directionGridState={directionGridState}
+          pathGrid={pathGridState}
         />
       )}
-      {isSolved && <div>Solved!</div>}
-      <label htmlFor="width">
-        Width:
-        <input
-          type="number"
-          name="width"
-          id="width"
-          min={5}
-          onChange={(e) => setGenerateWidth(+e.target.value)}
-        />
-      </label>
-      <label htmlFor="height">
-        Height:
-        <input
-          type="number"
-          name="height"
-          id="height"
-          min={5}
-          onChange={(e) => setGenerateHeight(+e.target.value)}
-        />
-      </label>
-      <label htmlFor="seed">
-        Seed:
-        <input
-          type="number"
-          name="seed"
-          id="seed"
-          min={0}
-          onChange={(e) => setGenerateSeed(+e.target.value)}
-        />
-      </label>
-      <button
-        onClick={() =>
+      {isSolved && <div className="solved">Solved!</div>}
+      <PuzzleControls
+        minWidth={5}
+        minHeight={5}
+        onChangeWidth={setGenerateWidth}
+        onChangeHeight={setGenerateHeight}
+        onChangeSeed={setGenerateSeed}
+        showGenerationWarning={true}
+        onClickGenerate={() =>
           generatePuzzle(generateWidth, generateHeight, generateSeed)
         }
-      >
-        Generate
-      </button>
-      <button
-        onClick={() => {
-          setDirectionGridState(solutionGrid);
+        onClickSolve={() => {
+          setPathGridState(solutionGrid);
           setIsSolved(true);
         }}
-      >
-        Solve
-      </button>
-      <button
-        onClick={() => {
-          setDirectionGridState(
-            createEmptyDirectionGrid(generateWidth, generateHeight)
-          );
-          setPuzzle(puzzleFromNumberGrid(puzzle.unsolved));
+        onClickReset={() => {
+          setPathGridState(createEmptyPathGrid(generateWidth, generateHeight));
           setIsSolved(false);
         }}
-      >
-        Reset
-      </button>
+      />
+      <details>
+        <summary>How to Play</summary>
+        <p>
+          Click on the grid lines to draw paths. Connect same numbers. Paths
+          can't cross.
+        </p>
+      </details>
     </>
   );
 }

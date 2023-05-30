@@ -1,4 +1,4 @@
-import { DirectionSet } from "../../puzzle/numberlink/types";
+import { DirectionSet, PathCell } from "../../puzzle/numberlink/types";
 import { flatIndexToCoords } from "../../puzzle/numberlink/utility";
 
 type CellProps = {
@@ -6,7 +6,7 @@ type CellProps = {
   flatIndex: number;
   puzzleWidth: number;
   puzzleHeight: number;
-  directions: DirectionSet;
+  pathCell: PathCell;
 };
 
 export function Cell({
@@ -14,7 +14,7 @@ export function Cell({
   flatIndex,
   puzzleWidth,
   puzzleHeight,
-  directions,
+  pathCell,
 }: CellProps) {
   const cellCoords = flatIndexToCoords(flatIndex, puzzleWidth);
   const clickZoneBase = {
@@ -76,13 +76,23 @@ export function Cell({
     bottom: 0,
     top: "40%",
   };
+  const isNumberWithPath =
+    number && (pathCell.left || pathCell.up || pathCell.right || pathCell.down);
+  const numberStyle = isNumberWithPath
+    ? {
+        color: "white",
+        zIndex: "10",
+      }
+    : undefined;
   return (
     <div className="cell">
-      <div className="cell-number">{number}</div>
-      {directions.left && <div style={leftStyle}></div>}
-      {directions.right && <div style={rightStyle}></div>}
-      {directions.up && <div style={upStyle}></div>}
-      {directions.down && <div style={downStyle}></div>}
+      <div className="cell-number" style={numberStyle}>
+        {number}
+      </div>
+      {pathCell.left && <div style={leftStyle}></div>}
+      {pathCell.right && <div style={rightStyle}></div>}
+      {pathCell.up && <div style={upStyle}></div>}
+      {pathCell.down && <div style={downStyle}></div>}
       {cellCoords.x < puzzleWidth - 1 && (
         <div
           data-clickzonesource={flatIndex}

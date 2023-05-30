@@ -1,24 +1,53 @@
 export type NumberGrid = number[][];
 
-export type Puzzle = {
+// export type Puzzle = {
+//   unsolved: NumberGrid;
+//   cells: SolvingCell[][];
+//   paths: SolvingPath[];
+//   numberPairCount: number;
+//   seed: number | undefined;
+// };
+
+export type SolvingData = {
   unsolved: NumberGrid;
-  cells: Cell[][];
-  paths: Path[];
+  cells: SolvingCell[][];
+  paths: SolvingPath[];
   numberPairCount: number;
-  seed: number | undefined;
 };
 
-export type Cell = {
-  coordinates: Coordinates;
-  pathParent: Path | undefined;
+export type SolvingCell = {
+  coordinates: Vector2;
+  pathParent: SolvingPath | undefined;
 };
 
-export type Path = {
-  cells: Cell[];
+export type SolvingPath = {
+  cells: SolvingCell[];
   number: number | undefined;
 };
 
-export type Coordinates = {
+export type PathCell = {
+  left: boolean;
+  up: boolean;
+  right: boolean;
+  down: boolean;
+  coordinates: Vector2;
+};
+
+export type PathGrid = PathCell[][];
+
+export type Direction = "left" | "up" | "right" | "down";
+
+export type PathCellNeighbors = {
+  left: PathCell | undefined;
+  up: PathCell | undefined;
+  right: PathCell | undefined;
+  down: PathCell | undefined;
+  downLeft: PathCell | undefined;
+  upLeft: PathCell | undefined;
+  upRight: PathCell | undefined;
+  downRight: PathCell | undefined;
+};
+export type Vector2 = {
   x: number;
   y: number;
 };
@@ -28,4 +57,12 @@ export type DirectionSet = {
   up: boolean;
   right: boolean;
   down: boolean;
+};
+
+export type GenerationResult = {
+  // puzzle: Puzzle | undefined;
+  puzzle: NumberGrid | undefined;
+  solution: PathGrid | undefined; //not necessarily the only solution
+  attempts: number;
+  executionMs: number;
 };
