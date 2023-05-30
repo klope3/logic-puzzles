@@ -76,9 +76,19 @@ export function Cell({
     bottom: 0,
     top: "40%",
   };
+  const isNumberWithPath =
+    number && (pathCell.left || pathCell.up || pathCell.right || pathCell.down);
+  const numberStyle = isNumberWithPath
+    ? {
+        color: "white",
+        zIndex: "10",
+      }
+    : undefined;
   return (
     <div className="cell">
-      <div className="cell-number">{number}</div>
+      <div className="cell-number" style={numberStyle}>
+        {number}
+      </div>
       {pathCell.left && <div style={leftStyle}></div>}
       {pathCell.right && <div style={rightStyle}></div>}
       {pathCell.up && <div style={upStyle}></div>}

@@ -6,6 +6,7 @@ type PuzzleControlsProps = {
   onChangeWidth: NumberCb;
   onChangeHeight: NumberCb;
   onChangeSeed: NumberCb;
+  showGenerationWarning: boolean;
   onClickGenerate: () => void;
   onClickSolve: () => void;
   onClickReset: () => void;
@@ -17,6 +18,7 @@ export function PuzzleControls({
   onChangeWidth,
   onChangeHeight,
   onChangeSeed,
+  showGenerationWarning,
   onClickGenerate,
   onClickSolve,
   onClickReset,
@@ -58,6 +60,11 @@ export function PuzzleControls({
           />
         </label>
       </div>
+      {showGenerationWarning && (
+        <div className="danger">
+          Please allow a few seconds for larger puzzles to generate.
+        </div>
+      )}
       <div>
         <button onClick={onClickGenerate}>Generate</button>
       </div>

@@ -12,6 +12,7 @@ import {
   isCellPartiallyFilled,
 } from "../../puzzle/numberlink/gridLogic";
 import { PuzzleControls } from "../common/PuzzleControls";
+import { Link } from "react-router-dom";
 
 const initialWidth = 5;
 const initialHeight = 5;
@@ -111,13 +112,14 @@ export function Numberlink() {
           pathGrid={pathGridState}
         />
       )}
-      {isSolved && <div>Solved!</div>}
+      {isSolved && <div className="solved">Solved!</div>}
       <PuzzleControls
         minWidth={5}
         minHeight={5}
         onChangeWidth={setGenerateWidth}
         onChangeHeight={setGenerateHeight}
         onChangeSeed={setGenerateSeed}
+        showGenerationWarning={true}
         onClickGenerate={() =>
           generatePuzzle(generateWidth, generateHeight, generateSeed)
         }
@@ -130,6 +132,13 @@ export function Numberlink() {
           setIsSolved(false);
         }}
       />
+      <details>
+        <summary>How to Play</summary>
+        <p>
+          Click on the grid lines to draw paths. Connect same numbers. Paths
+          can't cross.
+        </p>
+      </details>
     </>
   );
 }

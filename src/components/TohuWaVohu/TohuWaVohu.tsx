@@ -51,19 +51,19 @@ export function TohuWaVohu() {
 
   return (
     <div>
-      <div>Tohu</div>
       <Grid
         puzzleOriginal={puzzle.states}
         puzzleState={puzzleState}
         clickFunction={clickCell}
       />
-      {isSolved && <div>Solved!</div>}
+      {isSolved && <div className="solved">Solved!</div>}
       <PuzzleControls
         minWidth={4}
         minHeight={4}
         onChangeWidth={setNewWidth}
         onChangeHeight={setNewHeight}
         onChangeSeed={setNewSeed}
+        showGenerationWarning={false}
         onClickGenerate={() => {
           const newPuzzle = generatePuzzle(newWidth, newHeight, newSeed);
           setPuzzle(newPuzzle);
@@ -72,11 +72,21 @@ export function TohuWaVohu() {
         }}
         onClickReset={() => {
           setPuzzleState(puzzle.states);
+          setIsSolved(false);
         }}
         onClickSolve={() => {
           setPuzzleState(puzzle.solution);
+          setIsSolved(true);
         }}
       />
+      <details>
+        <summary>How to Play</summary>
+        <p>
+          Fill the grid with black and white. No more than 2 white or 2 black in
+          a row. Each row and column must have the same number of whites and
+          blacks. (2 blacks and 2 whites, 3 blacks and 3 whites, etc.)
+        </p>
+      </details>
     </div>
   );
 }
