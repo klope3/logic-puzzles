@@ -4,7 +4,14 @@ import {
   isPositionFlankedByState,
   isTallyMaxedAtPosition,
 } from "./deductions.js";
-import { black, CellState, ColorTallies, Coordinates, white } from "./types.js";
+import {
+  black,
+  CellState,
+  ColorTallies,
+  Coordinates,
+  Puzzle,
+  white,
+} from "./types.js";
 import {
   getCellStateNeighbors,
   getOppositeState,
@@ -21,7 +28,7 @@ export function generatePuzzle(
   width: number,
   height: number,
   seed?: number
-): CellState[][] {
+): Puzzle {
   const params = validatePuzzleParams(width, height);
   width = params.width;
   height = params.height;
@@ -60,7 +67,10 @@ export function generatePuzzle(
     openIndices.splice(randIndex, 1);
     step++;
   }
-  return puzzle;
+  return {
+    states: puzzle,
+    solution: raw,
+  };
 }
 
 function wouldBeDeducible(

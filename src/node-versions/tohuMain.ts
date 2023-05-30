@@ -18,10 +18,10 @@ export const verbose = false;
 //   console.log("====================");
 // }
 
-for (let i = 0; i < 30; i++) {
-  const puzzle = generatePuzzle(8, 8, i);
-  printGrid(new Grid(puzzle));
-}
+// for (let i = 0; i < 30; i++) {
+//   const puzzle = generatePuzzle(8, 8, i);
+//   printGrid(new Grid(puzzle));
+// }
 // let str = "";
 // for (let i = 0; i < 30; i++) {
 //   const n = mulberry32(i) > 0.5 ? 2 : 1;

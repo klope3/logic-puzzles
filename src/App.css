@@ -1,0 +1,13 @@
+.danger {
+  color: red;
+}
+
+.solved {
+  background-color: green;
+  color: white;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}

@@ -1,6 +1,6 @@
 import { mulberry32 } from "../../seededRandom.js";
 import { doesPositionHaveTwoNeighborsOfState, isPositionFlankedByState, isTallyMaxedAtPosition, } from "./deductions.js";
-import { black, white } from "./types.js";
+import { black, white, } from "./types.js";
 import { getCellStateNeighbors, getOppositeState, getRandomFilledCellState, indexToCoords, } from "./utility.js";
 export function generatePuzzle(width, height, seed) {
     const params = validatePuzzleParams(width, height);
@@ -34,7 +34,10 @@ export function generatePuzzle(width, height, seed) {
         openIndices.splice(randIndex, 1);
         step++;
     }
-    return puzzle;
+    return {
+        states: puzzle,
+        solution: raw,
+    };
 }
 function wouldBeDeducible(coords, puzzle, columnTallies, rowTallies) {
     const width = puzzle[0].length;
